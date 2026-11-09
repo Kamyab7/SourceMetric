@@ -1,0 +1,44 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sourcemetric",
+  "main": "apps/worker/src/app/index.ts",
+  "compatibility_date": "2026-11-09",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "apps/web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true,
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sourcemetric",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "apps/worker/migrations",
+    },
+  ],
+  "vars": { "APP_ENV": "production", "ACCESS_TEAM_DOMAIN": "", "ACCESS_AUD": "", "APP_ORIGIN": "" },
+  "triggers": { "crons": ["0 * * * *"] },
+  "observability": { "enabled": true, "traces": { "enabled": true, "head_sampling_rate": 0.1 } },
+  "env": {
+    "local": {
+      "name": "sourcemetric-local",
+      "vars": {
+        "APP_ENV": "local",
+        "ACCESS_TEAM_DOMAIN": "",
+        "ACCESS_AUD": "",
+        "APP_ORIGIN": "http://localhost:8787",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "sourcemetric",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "apps/worker/migrations",
+        },
+      ],
+    },
+  },
+}
