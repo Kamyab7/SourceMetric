@@ -1,0 +1,40 @@
+{
+  "name": "sourcemetric",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "dev": "pnpm build:web && wrangler dev --env local --test-scheduled",
+    "dev:web": "pnpm --filter @sourcemetric/web dev",
+    "build:web": "pnpm --filter @sourcemetric/web build",
+    "build": "pnpm build:web && wrangler deploy --env=\"\" --dry-run --outdir dist/worker",
+    "typecheck": "vue-tsc -p apps/web/tsconfig.json --noEmit && tsc -p apps/worker/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "db:local": "wrangler d1 migrations apply sourcemetric --local --env local",
+    "types": "wrangler types apps/worker/src/platform/env.d.ts --include-runtime=false --strict-vars=false",
+    "deploy": "pnpm build:web && wrangler deploy --env=\"\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@sourcemetric/contracts": "workspace:*",
+    "drizzle-orm": "^0.44.0",
+    "hono": "^4.10.0",
+    "jose": "^6.1.0",
+    "semver": "^7.7.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.6.0",
+    "@cloudflare/workers-types": "^5.20261109.1",
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^22.0.0",
+    "@types/semver": "^7.7.0",
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0",
+    "vue-tsc": "^3.1.0",
+    "wrangler": "^4.135.0"
+  }
+}
