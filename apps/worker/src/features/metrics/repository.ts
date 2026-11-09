@@ -1,6 +1,6 @@
 import type { MetricRange, Annotation } from '@sourcemetric/contracts';
 import type { ObservationRow } from './calculations';
-export async function metricData(db: D1Database, range: MetricRange, includeVersions = false) {
+export async function metricPackages(db: D1Database, range: MetricRange) {
   const conditions = [range.packageId ? '1=1' : 'p.archived=0'],
     params: string[] = [];
   if (range.packageId) {
@@ -13,7 +13,7 @@ export async function metricData(db: D1Database, range: MetricRange, includeVers
     );
     params.push(range.projectId);
   }
-  const packages = (
+  return (
     await db
       .prepare(
         'SELECT p.id,p.created_at,p.last_success FROM packages p WHERE ' + conditions.join(' AND '),
@@ -21,6 +21,9 @@ export async function metricData(db: D1Database, range: MetricRange, includeVers
       .bind(...params)
       .all<{ id: string; created_at: string; last_success: string | null }>()
   ).results;
+}
+export async function metricData(db: D1Database, range: MetricRange, includeVersions = false) {
+  const packages = await metricPackages(db, range);
   const ids = packages.map((p) => p.id);
   if (!ids.length)
     return {
@@ -122,4 +125,37 @@ export async function versionDistribution(
       .bind(...ids, to, to)
       .all<{ packageId: string; version: string; downloads: number; observedAt: string }>()
   ).results;
+}
+
+export async function pagedVersions(
+  db: D1Database,
+  range: MetricRange,
+  limit: number,
+  offset: number,
+) {
+  const ids = (await metricPackages(db, range)).map((p) => p.id);
+  if (!ids.length) return { items: [], total: 0 };
+  const marks = ids.map(() => '?').join(',');
+  const channel =
+    range.channel === 'all' ? '' : ' AND v.prerelease=' + (range.channel === 'prerelease' ? 1 : 0);
+  const source =
+    " FROM package_versions v JOIN observations o ON o.id=(SELECT b.id FROM observations b WHERE b.package_id=v.package_id AND b.metric='downloads' AND b.scope='version' AND b.version=v.version AND b.observed_at<=? ORDER BY b.observed_at DESC,b.id DESC LIMIT 1) WHERE v.package_id IN (" +
+    marks +
+    ') AND o.value IS NOT NULL' +
+    channel;
+  const [rows, total] = await Promise.all([
+    db
+      .prepare(
+        'SELECT v.package_id packageId,v.version,o.value downloads,o.observed_at observedAt' +
+          source +
+          ' ORDER BY o.value DESC,v.package_id,v.version LIMIT ? OFFSET ?',
+      )
+      .bind(range.to, ...ids, limit, offset)
+      .all(),
+    db
+      .prepare('SELECT COUNT(*) n' + source)
+      .bind(range.to, ...ids)
+      .first<{ n: number }>(),
+  ]);
+  return { items: rows.results, total: total?.n ?? 0 };
 }

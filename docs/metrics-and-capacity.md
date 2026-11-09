@@ -10,7 +10,7 @@ Charts place interval growth at the ending observation; tooltips identify bounda
 
 Observed growth sums available, fully contained measured intervals, even with partial coverage. It is not an exact period total. Complete coverage and comparison are conservative: they require a baseline at/before the start, fully contained valid intervals, no gaps/corrections/missing counters, and a final observation within seven hours of the end. A boundary-crossing interval cannot be allocated exactly and makes the period incomplete for comparison. Ranges not aligned with collection times may therefore show partial coverage and N/A comparison, while measured interval growth remains visible and exportable. Percentage comparisons require two complete periods and a nonzero previous value.
 
-Stable/prerelease summaries aggregate available version counters. Newly discovered versions establish independent baselines. Version distributions show up to 200 returned versions with timestamps, not inferred missing counters. NuGet package totals can differ from available-version sums.
+Stable/prerelease summaries aggregate available version counters. Newly discovered versions establish independent baselines. The version table is paginated through all available returned versions with timestamps, not inferred missing counters. The combined metrics response retains its legacy 200-version snapshot; the dashboard uses the separate paginated version endpoint. NuGet package totals can differ from available-version sums.
 
 Queries cap at 50,000 observation rows and flag truncation, suppressing exact comparisons. CSV rejects oversized exports rather than silently truncating; select shorter ranges or individual packages.
 

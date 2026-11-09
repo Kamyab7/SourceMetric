@@ -1,21 +1,31 @@
 import { Hono } from 'hono';
-import { idSchema } from '@sourcemetric/contracts';
+import { idSchema, paginationSchema } from '@sourcemetric/contracts';
 import { parse, type AppBindings } from '../../platform/http';
 import { getPackage, listPackages } from '../packages/repository';
 import { AppError, notFound } from '../../platform/errors';
 export const syncRoutes = new Hono<AppBindings>()
   .get('/', async (c) => {
-    const [packages, count, attempts] = await Promise.all([
-      listPackages(c.env.DB),
+    const p = parse(paginationSchema, c.req.query());
+    const jobs = parse(paginationSchema, {
+      limit: c.req.query('packageLimit'),
+      offset: c.req.query('packageOffset'),
+    });
+    const [packages, count, attempts, total] = await Promise.all([
+      listPackages(c.env.DB, jobs.limit, jobs.offset),
       c.env.DB.prepare('SELECT COUNT(*) n FROM observations').first<{ n: number }>(),
       c.env.DB.prepare(
-        'SELECT id,package_id packageId,started_at startedAt,finished_at finishedAt,status,error FROM sync_attempts ORDER BY started_at DESC LIMIT 50',
-      ).all(),
+        'SELECT a.id,a.package_id packageId,p.display_name packageName,a.started_at startedAt,a.finished_at finishedAt,a.status,a.error FROM sync_attempts a JOIN packages p ON p.id=a.package_id ORDER BY a.started_at DESC,a.id DESC LIMIT ? OFFSET ?',
+      )
+        .bind(p.limit, p.offset)
+        .all(),
+      c.env.DB.prepare('SELECT COUNT(*) n FROM sync_attempts').first<{ n: number }>(),
     ]);
     return c.json({
       packages: packages.items,
+      packageTotal: packages.total,
       observationCount: count?.n ?? 0,
       attempts: attempts.results,
+      attemptTotal: total?.n ?? 0,
     });
   })
   .post('/:id/refresh', async (c) => {

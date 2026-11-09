@@ -29,7 +29,7 @@ export async function listPackages(db: D1Database, limit = 100, offset = 0, proj
   const params = projectId ? [projectId] : [];
   const [rows, total] = await Promise.all([
     db
-      .prepare(select + where + ' ORDER BY p.display_name LIMIT ? OFFSET ?')
+      .prepare(select + where + ' ORDER BY p.display_name,p.id LIMIT ? OFFSET ?')
       .bind(...params, limit, offset)
       .all<Record<string, unknown>>(),
     db

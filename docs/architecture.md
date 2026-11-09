@@ -10,23 +10,23 @@ Backend feature folders own routes, operations, and persistence. Projects and an
 
 ## API
 
-| Resource under /api/v1            | Operations                                              |
-| --------------------------------- | ------------------------------------------------------- |
-| /projects                         | GET paginated list, POST create                         |
-| /projects/:id                     | PATCH name/archive                                      |
-| /projects/:id/packages/:packageId | PUT associate, DELETE unlink                            |
-| /packages/resolve                 | POST validate/resolve                                   |
-| /packages                         | GET paginated list, optionally projectId; POST register |
-| /packages/:id                     | GET details, PATCH archive/restore, DELETE history      |
-| /metrics                          | GET summary, series, versions, comparisons, notes       |
-| /annotations                      | GET paginated list, POST create                         |
-| /annotations/:id                  | PUT edit, DELETE                                        |
-| /sync                             | GET schedule, observation count, 50 recent attempts     |
-| /sync/:id/refresh                 | POST queue with five-minute cooldown                    |
-| /exports                          | GET CSV                                                 |
-| /health                           | GET authenticated health                                |
+| Resource under /api/v1            | Operations                                                             |
+| --------------------------------- | ---------------------------------------------------------------------- |
+| /projects                         | GET paginated list, POST create                                        |
+| /projects/:id                     | PATCH name/archive                                                     |
+| /projects/:id/packages/:packageId | PUT associate, DELETE unlink                                           |
+| /packages/resolve                 | POST validate/resolve                                                  |
+| /packages                         | GET paginated list, optionally projectId; POST register                |
+| /packages/:id                     | GET details, PATCH archive/restore, DELETE history                     |
+| /metrics                          | GET summary, series, versions, comparisons, notes                      |
+| /annotations                      | GET paginated list, POST create                                        |
+| /annotations/:id                  | PUT edit, DELETE                                                       |
+| /sync                             | GET schedule, observation count, paginated attempts with package names |
+| /sync/:id/refresh                 | POST queue with five-minute cooldown                                   |
+| /exports                          | GET CSV                                                                |
+| /health                           | GET authenticated health                                               |
 
-Metrics/export require ISO from/to, optional projectId/packageId, and channel=all|stable|prerelease. Timestamps normalize to UTC. Ranges must be ordered and at most 366 days. Lists accept limit (1–100) and offset. Errors use an error object with code and message. Unknown API routes return JSON 404s.
+Metrics/export require ISO from/to, optional projectId/packageId, and channel=all|stable|prerelease. Timestamps normalize to UTC. Ranges must be ordered and at most 366 days. Lists accept limit (1–100) and offset. The UI offers 10, 20, or 50 items per page and clamps empty final pages after deletion. Collection health accepts limit/offset for attempts and packageLimit/packageOffset for its independent schedule list; responses include attemptTotal and packageTotal. Selector lists load successive API pages instead of stopping at 100 records. Dashboard notes paginate their date-scoped chart context in the browser; dashboard versions use /metrics/versions so counters beyond the legacy 200-item snapshot remain accessible. Errors use an error object with code and message. Unknown API routes return JSON 404s.
 
 Permanent deletion requires an archived package and confirm=delete-history query parameter. Foreign keys cascade to observations, versions, attempts, associations, and package notes.
 

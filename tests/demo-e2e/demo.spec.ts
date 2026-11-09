@@ -33,3 +33,30 @@ test('demo launches populated dashboards using real local API data', async ({ pa
   expect(mutation.status()).toBe(409);
   expect(errors).toEqual([]);
 });
+
+test('real demo lists page independently and reset when dashboard filters change', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const versions = page.getByRole('navigation', { name: 'versions pagination' });
+  await expect(versions).toContainText('1–10 of 18');
+  await versions.getByRole('button', { name: 'Next versions page' }).click();
+  await expect(versions).toContainText('11–18 of 18');
+  await page.getByLabel('Version channel').selectOption('prerelease');
+  await expect(versions).toContainText('1–6 of 6');
+  await page.getByRole('button', { name: '90 days', exact: true }).click();
+  const notes = page.getByRole('navigation', { name: 'dashboard notes pagination' });
+  await expect(notes).toContainText('1–10 of 16');
+  await notes.getByRole('button', { name: 'Next dashboard notes page' }).click();
+  await expect(notes).toContainText('11–16 of 16');
+  await page.getByRole('button', { name: '7 days', exact: true }).click();
+  await expect(notes).toContainText('1–2 of 2');
+  await page.getByRole('link', { name: 'Collection health', exact: true }).click();
+  const attempts = page.getByRole('navigation', { name: 'collection attempts pagination' });
+  await expect(attempts).toContainText('1–10 of 48');
+  await attempts.getByRole('button', { name: 'Next collection attempts page' }).click();
+  await expect(attempts).toContainText('11–20 of 48');
+  await expect(
+    page.getByRole('navigation', { name: 'collection schedule pagination' }),
+  ).toContainText('1–6 of 6');
+});

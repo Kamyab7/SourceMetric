@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import type { MetricRange } from '@sourcemetric/contracts';
 import { useProjects } from '../projects/queries';
 import { usePackages, usePackage } from '../packages/queries';
-import { useMetrics } from './queries';
+import Pagination from '../../shared/Pagination.vue';
+import { usePagination, useClientPagination } from '../../shared/pagination';
+import { useMetrics, useVersions } from './queries';
 import { number, utc } from '../../shared/api';
 import GrowthChart from './GrowthChart.vue';
 import ExportButton from '../exports/ExportButton.vue';
@@ -37,6 +39,22 @@ const range = computed<MetricRange>(() => ({
   ...(packageId.value ? { packageId: packageId.value } : {}),
 }));
 const metrics = useMetrics(range);
+const versionTotal = ref(0);
+const versionPages = usePagination(versionTotal);
+const versions = useVersions(range, versionPages.page, versionPages.pageSize);
+watch(
+  () => versions.data.value?.total,
+  (value) => {
+    if (value !== undefined) versionTotal.value = value;
+  },
+  { immediate: true },
+);
+const notes = useClientPagination(computed(() => metrics.data.value?.annotations ?? []));
+watch(range, () => {
+  versionPages.page.value = 1;
+  notes.page.value = 1;
+});
+
 const title = computed(() =>
   packageId.value
     ? (pkg.data.value?.displayName ?? 'Package')
@@ -162,9 +180,13 @@ const shownPackages = computed(
       <section class="card bg-base-100 border border-base-300 panel">
         <h2>Available version downloads</h2>
         <p class="muted small">
-          Latest returned counters, not unique users or active installations. Up to 200 versions.
+          Latest returned counters, not unique users or active installations.
         </p>
-        <div v-if="!metrics.data.value.versions.length" class="empty compact">
+        <p v-if="versions.error.value" class="error" role="alert">
+          {{ versions.error.value.message }}
+        </p>
+        <div v-else-if="versions.isPending.value" class="empty compact">Loading versions…</div>
+        <div v-else-if="!versions.data.value?.items.length" class="empty compact">
           No version observations yet.
         </div>
         <table class="table" v-else>
@@ -176,7 +198,7 @@ const shownPackages = computed(
             </tr>
           </thead>
           <tbody>
-            <tr v-for="v in metrics.data.value.versions" :key="v.packageId + v.version">
+            <tr v-for="v in versions.data.value?.items" :key="v.packageId + v.version">
               <td>
                 <RouterLink :to="'/packages/' + v.packageId"
                   >{{ shownPackages.find((p) => p.id === v.packageId)?.displayName }}<br /><span
@@ -190,6 +212,13 @@ const shownPackages = computed(
             </tr>
           </tbody>
         </table>
+        <Pagination
+          v-model:page="versionPages.page.value"
+          v-model:page-size="versionPages.pageSize.value"
+          :total="versionTotal"
+          :busy="versions.isFetching.value"
+          label="versions"
+        />
       </section>
       <section class="card bg-base-100 border border-base-300 panel">
         <h2>Releases & campaigns</h2>
@@ -198,17 +227,20 @@ const shownPackages = computed(
           No notes in this period. <RouterLink to="/annotations">Add a note</RouterLink>
         </div>
         <div class="max-h-[520px] overflow-y-auto pr-2">
-          <article
-            v-for="note in metrics.data.value.annotations"
-            :key="note.id"
-            class="annotation-entry"
-          >
+          <article v-for="note in notes.items.value" :key="note.id" class="annotation-entry">
             <span class="badge badge-outline">{{ note.kind }}</span>
             <h3>{{ note.title }}</h3>
             <p class="small muted">{{ utc(note.occurredAt) }}</p>
             <p>{{ note.body }}</p>
           </article>
         </div>
+        <Pagination
+          v-model:page="notes.page.value"
+          v-model:page-size="notes.pageSize.value"
+          :total="notes.total.value"
+          :busy="metrics.isFetching.value"
+          label="dashboard notes"
+        />
       </section>
     </div>
   </template>

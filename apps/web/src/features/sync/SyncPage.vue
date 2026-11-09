@@ -1,7 +1,24 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue';
+import Pagination from '../../shared/Pagination.vue';
+import { usePagination } from '../../shared/pagination';
 import { useSync } from './queries';
 import { number, utc } from '../../shared/api';
-const sync = useSync();
+const attemptTotal = ref(0),
+  packageTotal = ref(0);
+const attempts = usePagination(attemptTotal),
+  jobs = usePagination(packageTotal);
+const sync = useSync(attempts.page, attempts.pageSize, jobs.page, jobs.pageSize);
+watch(
+  () => sync.data.value,
+  (data) => {
+    if (data) {
+      attemptTotal.value = data.attemptTotal;
+      packageTotal.value = data.packageTotal;
+    }
+  },
+  { immediate: true },
+);
 </script>
 <template>
   <div class="page-heading">
@@ -21,8 +38,7 @@ const sync = useSync();
       ><span class="small muted">No automatic deletion</span>
     </article>
     <article>
-      <span class="eyebrow">PACKAGES</span
-      ><strong>{{ sync.data.value?.packages.length ?? 0 }}</strong
+      <span class="eyebrow">PACKAGES</span><strong>{{ packageTotal }}</strong
       ><span class="small muted">Up to four per collector invocation</span>
     </article>
   </div>
@@ -55,6 +71,13 @@ const sync = useSync();
         </tbody>
       </table>
     </div>
+    <Pagination
+      v-model:page="jobs.page.value"
+      v-model:page-size="jobs.pageSize.value"
+      :total="packageTotal"
+      :busy="sync.isFetching.value"
+      label="collection schedule"
+    />
   </section>
   <section class="card bg-base-100 border border-base-300 panel">
     <h2>Recent collection attempts</h2>
@@ -70,10 +93,7 @@ const sync = useSync();
       <tbody>
         <tr v-for="a in sync.data.value?.attempts" :key="a.id">
           <td>
-            {{
-              sync.data.value?.packages.find((p) => p.id === a.packageId)?.displayName ??
-              a.packageId
-            }}
+            {{ a.packageName }}
           </td>
           <td>{{ utc(a.startedAt) }}</td>
           <td>{{ a.status }}</td>
@@ -81,6 +101,13 @@ const sync = useSync();
         </tr>
       </tbody>
     </table>
+    <Pagination
+      v-model:page="attempts.page.value"
+      v-model:page-size="attempts.pageSize.value"
+      :total="attemptTotal"
+      :busy="sync.isFetching.value"
+      label="collection attempts"
+    />
   </section>
   <p class="muted small">
     Stored observations grow with packages × versions × collections. Review D1 storage usage in

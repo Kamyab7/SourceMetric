@@ -1,15 +1,26 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import Pagination from '../../shared/Pagination.vue';
+import { usePagination } from '../../shared/pagination';
+import { ref, watch } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import type { Annotation } from '@sourcemetric/contracts';
 import { useAnnotations } from './queries';
 import { useProjects } from '../projects/queries';
 import { usePackages } from '../packages/queries';
 import { mutate, utc } from '../../shared/api';
-const notes = useAnnotations(),
+const total = ref(0);
+const { page, pageSize } = usePagination(total);
+const notes = useAnnotations(page, pageSize),
   projects = useProjects(),
   packages = usePackages(),
   client = useQueryClient();
+watch(
+  () => notes.data.value?.total,
+  (value) => {
+    if (value !== undefined) total.value = value;
+  },
+  { immediate: true },
+);
 const editing = ref(''),
   title = ref(''),
   body = ref(''),
@@ -148,9 +159,13 @@ async function action(run: () => Promise<unknown>) {
     <p v-if="notes.data.value?.total === 0" class="empty">
       No notes yet. Add a release or campaign to give your metrics context.
     </p>
-    <p class="small muted">
-      Showing up to 100 latest notes. Automatic version notes use discovery time, not publication
-      time.
-    </p>
+    <p class="small muted">Automatic version notes use discovery time, not publication time.</p>
+    <Pagination
+      v-model:page="page"
+      v-model:page-size="pageSize"
+      :total="total"
+      :busy="notes.isFetching.value"
+      label="notes"
+    />
   </section>
 </template>

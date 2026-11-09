@@ -4,7 +4,12 @@ import { projects, projectPackages, packages } from '../../platform/schema';
 export async function listProjects(binding: D1Database, limit: number, offset: number) {
   const db = database(binding);
   return {
-    items: await db.select().from(projects).orderBy(projects.createdAt).limit(limit).offset(offset),
+    items: await db
+      .select()
+      .from(projects)
+      .orderBy(projects.createdAt, projects.id)
+      .limit(limit)
+      .offset(offset),
     total: (await db.select({ value: count() }).from(projects))[0]?.value ?? 0,
   };
 }

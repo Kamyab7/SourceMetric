@@ -7,7 +7,7 @@ export const annotationRoutes = new Hono<AppBindings>()
   .get('/', async (c) => {
     const p = parse(paginationSchema, c.req.query());
     const rows = await c.env.DB.prepare(
-      'SELECT id,project_id projectId,package_id packageId,kind,title,body,occurred_at occurredAt,automatic FROM annotations ORDER BY occurred_at DESC LIMIT ? OFFSET ?',
+      'SELECT id,project_id projectId,package_id packageId,kind,title,body,occurred_at occurredAt,automatic FROM annotations ORDER BY occurred_at DESC,id DESC LIMIT ? OFFSET ?',
     )
       .bind(p.limit, p.offset)
       .all<Record<string, unknown>>();

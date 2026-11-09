@@ -45,7 +45,12 @@ export const rangeSchema = z
   );
 export const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
-  offset: z.coerce.number().int().min(0).max(100000).default(0),
+  offset: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(Number.MAX_SAFE_INTEGER - 100)
+    .default(0),
 });
 export type MetricRange = z.infer<typeof rangeSchema>;
 export const projectSchema = z.object({
@@ -124,10 +129,13 @@ export function listSchema<T extends z.ZodType>(item: T) {
 export const syncSchema = z.object({
   packages: z.array(packageSchema),
   observationCount: z.number(),
+  packageTotal: z.number(),
+  attemptTotal: z.number(),
   attempts: z.array(
     z.object({
       id: z.string(),
       packageId: z.string(),
+      packageName: z.string(),
       startedAt: z.string(),
       finishedAt: z.string().nullable(),
       status: z.string(),
@@ -137,3 +145,10 @@ export const syncSchema = z.object({
 });
 
 export const healthSchema = z.object({ ok: z.boolean(), demo: z.boolean() });
+
+export const versionSchema = z.object({
+  packageId: z.string(),
+  version: z.string(),
+  downloads: z.number(),
+  observedAt: z.string(),
+});

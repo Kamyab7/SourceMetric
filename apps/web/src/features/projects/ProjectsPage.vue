@@ -1,13 +1,24 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import Pagination from '../../shared/Pagination.vue';
+import { usePagination } from '../../shared/pagination';
+import { ref, watch } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { useProjects } from './queries';
 import { mutate, utc } from '../../shared/api';
-const projects = useProjects(),
+const total = ref(0);
+const { page, pageSize } = usePagination(total);
+const projects = useProjects(page, pageSize),
   name = ref(''),
   error = ref(''),
   busy = ref(false),
   client = useQueryClient();
+watch(
+  () => projects.data.value?.total,
+  (value) => {
+    if (value !== undefined) total.value = value;
+  },
+  { immediate: true },
+);
 async function action(run: () => Promise<unknown>) {
   error.value = '';
   busy.value = true;
@@ -77,6 +88,13 @@ function rename(id: string, current: string) {
       </div>
     </article>
   </div>
+  <Pagination
+    v-model:page="page"
+    v-model:page-size="pageSize"
+    :total="total"
+    :busy="projects.isFetching.value"
+    label="projects"
+  />
   <p v-if="projects.data.value?.total === 0" class="empty">
     Create your first project to group your packages.
   </p>

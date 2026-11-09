@@ -9,6 +9,7 @@ import {
   LogOut,
   ChevronRight,
 } from '@lucide/vue';
+import { computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { healthSchema } from '@sourcemetric/contracts';
 import { api } from '../shared/api';
@@ -19,6 +20,7 @@ const health = useQuery({
   queryFn: () => api('/health', healthSchema),
   staleTime: Infinity,
 });
+const activeProjects = computed(() => projects.data.value?.items.filter((p) => !p.archived) ?? []);
 const navigation = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
   { to: '/packages', label: 'Packages', icon: Boxes },
@@ -54,12 +56,12 @@ const navigation = [
       </nav>
       <p class="workspace-label">YOUR PROJECTS</p>
       <nav class="menu w-full p-0" aria-label="Projects">
-        <RouterLink
-          v-for="p in projects.data.value?.items.filter((p) => !p.archived)"
-          :key="p.id"
-          :to="'/projects/' + p.id"
+        <RouterLink v-for="p in activeProjects.slice(0, 8)" :key="p.id" :to="'/projects/' + p.id"
           ><span class="project-dot" />{{ p.name
           }}<ChevronRight :size="13" class="ml-auto" aria-hidden="true"
+        /></RouterLink>
+        <RouterLink v-if="activeProjects.length > 8" to="/projects"
+          >View all {{ activeProjects.length }} projects<ChevronRight :size="13" aria-hidden="true"
         /></RouterLink>
       </nav>
       <div class="sidebar-footer">

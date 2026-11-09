@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import Pagination from '../../shared/Pagination.vue';
+import { usePagination } from '../../shared/pagination';
 import { useRoute } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import { usePackages } from './queries';
 import { useProjects } from '../projects/queries';
 import { mutate, number, utc } from '../../shared/api';
+const total = ref(0);
+const { page, pageSize } = usePagination(total);
 const route = useRoute(),
   projectId = ref(String(route.query.projectId ?? '')),
-  packages = usePackages(projectId),
+  packages = usePackages(projectId, page, pageSize),
   allPackages = usePackages(),
   projects = useProjects(),
   packageId = ref(''),
@@ -15,6 +19,16 @@ const route = useRoute(),
   busy = ref(false),
   client = useQueryClient(),
   existingId = ref('');
+watch(
+  () => packages.data.value?.total,
+  (value) => {
+    if (value !== undefined) total.value = value;
+  },
+  { immediate: true },
+);
+watch(projectId, () => {
+  page.value = 1;
+});
 const project = computed(() => projects.data.value?.items.find((p) => p.id === projectId.value));
 async function action(run: () => Promise<unknown>) {
   busy.value = true;
@@ -181,5 +195,12 @@ function remove(id: string) {
     <p v-if="packages.data.value?.total === 0" class="empty">
       No packages yet. Add a package ID above to start collecting.
     </p>
+    <Pagination
+      v-model:page="page"
+      v-model:page-size="pageSize"
+      :total="total"
+      :busy="packages.isFetching.value"
+      label="packages"
+    />
   </section>
 </template>
