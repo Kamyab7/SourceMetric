@@ -1,6 +1,19 @@
 # SourceMetric
 
+> [!WARNING]
+> SourceMetric is under active development and is not yet production-ready. Features, APIs, and the database schema may change without backward compatibility. Use it for evaluation and testing, and back up your data before upgrading.
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https%3A%2F%2Fgithub.com%2FKamyab7%2FSourceMetric)
+
 A private, self-hosted growth dashboard for open-source maintainers. Track listed NuGet packages, retain download observations, and add release or campaign notes.
+
+## Deploy to Cloudflare
+
+Use the button above to copy this repository into your GitHub/GitLab account and provision the Worker and D1 database. The Worker includes the Vue assets and hourly collection schedule; the deploy command applies database migrations using the DB binding.
+
+In the deployment form, keep the repository root as the project directory, use **pnpm run build** for the build command and **pnpm run deploy** for the deploy command. Cloudflare installs dependencies using the committed pnpm lockfile.
+
+**Finish the [custom domain and Cloudflare Access setup](docs/deployment.md#deploy-button)** before using the dashboard. The button does not create Access applications, access policies, or DNS/custom domains. Until authentication is configured, the Worker rejects requests; workers.dev and preview URLs remain disabled.
 
 ## Included
 
@@ -48,12 +61,13 @@ The endpoint is supplied by Wrangler's test-scheduled option, not a production A
     pnpm typecheck
     pnpm test
     pnpm build
+    pnpm check:deploy
     pnpm exec playwright install chromium
     pnpm test:e2e
     pnpm test:demo
     pnpm format:check
 
-Tests use the current Cloudflare Vitest plugin and local Workers runtime. Integration tests isolate D1 storage; Playwright uses a separate local state directory. Tests never deploy. Build includes a production Worker packaging dry run.
+Tests use the current Cloudflare Vitest plugin and local Workers runtime. Integration tests isolate D1 storage; Playwright uses a separate local state directory. Tests never deploy. The check:deploy command validates production Worker packaging with a dry run; build only compiles the Vue app.
 
 ## Deployment and architecture
 
@@ -61,7 +75,7 @@ Tests use the current Cloudflare Vitest plugin and local Workers runtime. Integr
 - [Feature architecture, API, and provider extension](docs/architecture.md)
 - [Measurement semantics and capacity](docs/metrics-and-capacity.md)
 
-Configure your own D1 database, custom domain, and Access application before deployment. Production intentionally refuses requests until Access settings are supplied.
+D1 is automatically provisioned by the deploy button, or can be created manually. Configure your custom domain and Access application to enable the deployed dashboard. Production intentionally refuses requests until Access settings are supplied.
 
 Free-tier operation is a target, **not verified on a deployed account**. Indefinite version history consumes storage; single-database limits matter.
 

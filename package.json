@@ -7,17 +7,19 @@
     "dev": "pnpm build:web && wrangler dev --env local --test-scheduled",
     "dev:web": "pnpm --filter @sourcemetric/web dev",
     "build:web": "pnpm --filter @sourcemetric/web build",
-    "build": "pnpm build:web && wrangler deploy --env=\"\" --dry-run --outdir dist/worker",
+    "build": "pnpm build:web",
     "typecheck": "vue-tsc -p apps/web/tsconfig.json --noEmit && tsc -p apps/worker/tsconfig.json --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "db:local": "wrangler d1 migrations apply sourcemetric --local --env local",
     "types": "wrangler types apps/worker/src/platform/env.d.ts --include-runtime=false --strict-vars=false",
-    "deploy": "pnpm build:web && wrangler deploy --env=\"\"",
+    "deploy": "pnpm build:web && pnpm db:migrate && wrangler deploy --env=\"\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "demo": "node scripts/demo.mjs",
-    "test:demo": "playwright test --config playwright.demo.config.ts"
+    "test:demo": "playwright test --config playwright.demo.config.ts",
+    "check:deploy": "pnpm build && wrangler deploy --env=\"\" --dry-run --outdir dist/worker",
+    "db:migrate": "wrangler d1 migrations apply DB --remote --env=\"\""
   },
   "dependencies": {
     "@sourcemetric/contracts": "workspace:*",
@@ -38,5 +40,27 @@
     "vitest": "^4.1.0",
     "vue-tsc": "^3.1.0",
     "wrangler": "^4.135.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "DB": {
+        "description": "D1 database for package history, projects, notes, and collection jobs. Cloudflare creates and binds this database; deployment applies the SQL migrations automatically."
+      },
+      "APP_ENV": {
+        "description": "Keep this set to production for hosted deployments. Local authentication bypass only belongs in local development."
+      },
+      "DEMO_MODE": {
+        "description": "Keep false for your real instance. The synthetic demo is a separate local-only configuration."
+      },
+      "ACCESS_TEAM_DOMAIN": {
+        "description": "Your Cloudflare Access team hostname, such as myteam.cloudflareaccess.com (without https://). Create your Access application and allow policy using the [setup guide](https://github.com/Kamyab7/SourceMetric/blob/master/docs/deployment.md)."
+      },
+      "ACCESS_AUD": {
+        "description": "Application Audience (AUD) from the Cloudflare Access self-hosted application protecting your SourceMetric hostname."
+      },
+      "APP_ORIGIN": {
+        "description": "Exact HTTPS origin of your custom domain, such as https://metrics.example.com, without a trailing slash. Add the custom-domain route in Wrangler after deployment."
+      }
+    }
   }
 }
