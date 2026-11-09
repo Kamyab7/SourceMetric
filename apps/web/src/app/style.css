@@ -352,3 +352,19 @@ body {
     animation: none !important;
   }
 }
+
+/* Override daisyUI's base-content focus color without changing resting fields. */
+@layer utilities {
+  :is(.input, .select, .textarea):is(:focus, :focus-within, :focus-visible) {
+    --input-color: color-mix(in oklab, var(--color-primary) 65%, transparent);
+    border-color: var(--input-color);
+    outline: 2px solid color-mix(in oklab, var(--color-primary) 20%, transparent);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}
+@media (forced-colors: active) {
+  :is(.input, .select, .textarea):is(:focus, :focus-within, :focus-visible) {
+    outline: 2px solid Highlight;
+  }
+}
