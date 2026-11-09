@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query';
 import App from './App.vue';
+import '@fontsource-variable/inter';
 import './style.css';
 const dashboard = () => import('../features/metrics/DashboardPage.vue');
 const router = createRouter({

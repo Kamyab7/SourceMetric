@@ -27,11 +27,14 @@ function render() {
   const ids = [...new Set(props.metrics.points.map((p) => p.packageId))];
   chart.setOption(
     {
-      color: ['#18785b', '#c48031', '#6289b1', '#9d6db2'],
+      color: ['#38d9f5', '#a78bfa', '#fbbf24', '#34d399'],
       tooltip: {
         trigger: 'axis',
         confine: true,
         renderMode: 'richText',
+        backgroundColor: '#131e31',
+        borderColor: '#304360',
+        textStyle: { color: '#e1ecfa' },
         formatter: (params: unknown) => {
           const rows = params as {
             seriesName: string;
@@ -49,16 +52,22 @@ function render() {
             .join('\n\n');
         },
       },
-      legend: { bottom: 0 },
+      textStyle: { fontFamily: 'Inter Variable, Inter, sans-serif', color: '#91a1b8' },
+      legend: { bottom: 0, textStyle: { color: '#91a1b8' } },
       grid: { left: 65, right: 25, top: 24, bottom: 60 },
       xAxis: {
         type: 'time',
-        axisLabel: { formatter: (v: number) => new Date(v).toISOString().slice(5, 10) },
+        axisLabel: {
+          color: '#91a1b8',
+          formatter: (v: number) => new Date(v).toISOString().slice(5, 10),
+        },
       },
       yAxis: {
         type: 'value',
         name: 'Observed downloads',
-        splitLine: { lineStyle: { color: '#edf0ec' } },
+        nameTextStyle: { color: '#91a1b8' },
+        axisLabel: { color: '#91a1b8' },
+        splitLine: { lineStyle: { color: '#203047' } },
       },
       series: ids.map((id, index) => ({
         name: props.packages.find((p) => p.id === id)?.displayName ?? id,
@@ -77,7 +86,7 @@ function render() {
             ? {
                 symbol: 'none',
                 silent: true,
-                lineStyle: { color: '#c48031', type: 'dashed' },
+                lineStyle: { color: '#a78bfa', type: 'dashed' },
                 data: props.metrics.annotations.map((n) => ({
                   xAxis: Date.parse(n.occurredAt),
                   label: { formatter: n.title },

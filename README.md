@@ -4,7 +4,7 @@ A private, self-hosted growth dashboard for open-source maintainers. Track liste
 
 ## Included
 
-- Vue 3 dashboard with workspace, project, and package views, date filters, version channels, ECharts trends, and CSV exports.
+- Vue 3 dashboard with a dark Tailwind CSS/daisyUI theme, self-hosted Inter, Lucide icons, and workspace, project, and package views, date filters, version channels, ECharts trends, and CSV exports.
 - Projects with shared packages, archive/restore, and explicit permanent history deletion.
 - NuGet service discovery, exact package resolution, package/version counters, and version discovery notes.
 - Hourly Worker scheduling, six-hour per-package cadence, bounded collection, expiring D1 leases, retries, and collection status.

@@ -6,11 +6,11 @@ test('maintainer can organize a project and campaign in an empty workspace', asy
     page.getByRole('heading', { name: 'Your open source, in perspective.' }),
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your history starts here.' })).toBeVisible();
-  await page.getByRole('link', { name: '▤ Projects', exact: true }).click();
+  await page.getByRole('link', { name: 'Projects', exact: true }).click();
   await page.getByLabel('Project name').fill(title);
   await page.getByRole('button', { name: 'Create project' }).click();
   await expect(page.getByRole('heading', { name: title + ' ↗' })).toBeVisible();
-  await page.getByRole('link', { name: '✎ Releases & campaigns' }).click();
+  await page.getByRole('link', { name: 'Releases & campaigns' }).click();
   await page.getByLabel('Project or package').selectOption({ label: title });
   await page.getByLabel('Title', { exact: true }).fill('Launch announcement');
   await page
@@ -64,7 +64,7 @@ test('mobile navigation and unknown frontend paths work', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Your open source, in perspective.' }),
   ).toBeVisible();
-  await page.getByRole('link', { name: '↻ Collection health' }).click();
+  await page.getByRole('link', { name: 'Collection health' }).click();
   await expect(
     page.getByRole('heading', { name: 'Every observation accounted for.' }),
   ).toBeVisible();

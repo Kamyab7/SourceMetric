@@ -26,10 +26,10 @@ const sync = useSync();
       ><span class="small muted">Up to four per collector invocation</span>
     </article>
   </div>
-  <section class="panel">
+  <section class="card bg-base-100 border border-base-300 panel">
     <h2>Collection schedule</h2>
     <div class="table-scroll">
-      <table>
+      <table class="table">
         <thead>
           <tr>
             <th>Package</th>
@@ -46,7 +46,9 @@ const sync = useSync();
             <td>{{ utc(p.lastSuccess) }}</td>
             <td>{{ p.archived ? 'Archived' : utc(p.nextAttempt) }}</td>
             <td>
-              <span class="badge" :class="{ warning: !!p.lastError }">{{ p.status }}</span>
+              <span class="badge badge-outline" :class="{ warning: !!p.lastError }">{{
+                p.status
+              }}</span>
               <p class="error small">{{ p.lastError }}</p>
             </td>
           </tr>
@@ -54,9 +56,9 @@ const sync = useSync();
       </table>
     </div>
   </section>
-  <section class="panel">
+  <section class="card bg-base-100 border border-base-300 panel">
     <h2>Recent collection attempts</h2>
-    <table>
+    <table class="table">
       <thead>
         <tr>
           <th>Package</th>

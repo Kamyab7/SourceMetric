@@ -58,13 +58,15 @@ const shownPackages = computed(
     </div>
     <ExportButton :range="range" />
   </div>
-  <section v-if="packageId && pkg.data.value" class="panel">
+  <section v-if="packageId && pkg.data.value" class="card bg-base-100 border border-base-300 panel">
     <p>{{ pkg.data.value.description }}</p>
     <div class="actions small muted">
       <span>Stable: {{ pkg.data.value.latestStable ?? '—' }}</span>
       <span>Prerelease: {{ pkg.data.value.latestPrerelease ?? '—' }}</span>
       <span>Last success: {{ utc(pkg.data.value.lastSuccess) }}</span>
-      <span class="badge">{{ pkg.data.value.archived ? 'Archived' : pkg.data.value.status }}</span>
+      <span class="badge badge-outline">{{
+        pkg.data.value.archived ? 'Archived' : pkg.data.value.status
+      }}</span>
     </div>
   </section>
   <div class="toolbar">
@@ -72,6 +74,7 @@ const shownPackages = computed(
       <button
         v-for="d in ['7', '30', '90', 'custom']"
         :key="d"
+        class="btn btn-ghost"
         :class="{ active: days === d }"
         @click="days = d"
       >
@@ -79,11 +82,16 @@ const shownPackages = computed(
       </button>
     </div>
     <template v-if="days === 'custom'"
-      ><input v-model="customFrom" type="date" aria-label="Start date UTC" /><input
+      ><input
+        class="input input-bordered w-full"
+        v-model="customFrom"
+        type="date"
+        aria-label="Start date UTC" /><input
+        class="input input-bordered w-full"
         v-model="customTo"
         type="date"
         aria-label="End date UTC" /></template
-    ><select v-model="channel" aria-label="Version channel">
+    ><select class="select select-bordered" v-model="channel" aria-label="Version channel">
       <option value="all">All versions</option>
       <option value="stable">Stable versions</option>
       <option value="prerelease">Prerelease versions</option></select
@@ -119,13 +127,13 @@ const shownPackages = computed(
         >
       </article>
     </div>
-    <section class="panel">
+    <section class="card bg-base-100 border border-base-300 panel">
       <div class="section-heading">
         <div>
           <h2>Growth over time</h2>
           <p class="muted small">Observed intervals, not reconstructed daily downloads.</p>
         </div>
-        <span class="badge" :class="{ warning: metrics.data.value.stale }">{{
+        <span class="badge badge-outline" :class="{ warning: metrics.data.value.stale }">{{
           metrics.data.value.stale ? 'Data needs attention' : 'Collection active'
         }}</span>
       </div>
@@ -151,7 +159,7 @@ const shownPackages = computed(
       </p>
     </section>
     <div class="two-columns">
-      <section class="panel">
+      <section class="card bg-base-100 border border-base-300 panel">
         <h2>Available version downloads</h2>
         <p class="muted small">
           Latest returned counters, not unique users or active installations. Up to 200 versions.
@@ -159,7 +167,7 @@ const shownPackages = computed(
         <div v-if="!metrics.data.value.versions.length" class="empty compact">
           No version observations yet.
         </div>
-        <table v-else>
+        <table class="table" v-else>
           <thead>
             <tr>
               <th>Version</th>
@@ -183,14 +191,14 @@ const shownPackages = computed(
           </tbody>
         </table>
       </section>
-      <section class="panel">
+      <section class="card bg-base-100 border border-base-300 panel">
         <h2>Releases & campaigns</h2>
         <p class="muted small">Context for changes in growth. Timing shows correlation.</p>
         <div v-if="!metrics.data.value.annotations.length" class="empty compact">
           No notes in this period. <RouterLink to="/annotations">Add a note</RouterLink>
         </div>
         <article v-for="note in metrics.data.value.annotations" :key="note.id" class="timeline">
-          <span class="badge">{{ note.kind }}</span>
+          <span class="badge badge-outline">{{ note.kind }}</span>
           <h3>{{ note.title }}</h3>
           <p class="small muted">{{ utc(note.occurredAt) }}</p>
           <p>{{ note.body }}</p>

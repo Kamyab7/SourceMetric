@@ -45,9 +45,9 @@ function remove(id: string) {
       <h1>{{ project ? project.name + ' packages' : 'Tracked packages' }}</h1>
       <p class="muted">NuGet today. A growing view of adoption over time.</p>
     </div>
-    <span class="badge">Up to 20 active packages</span>
+    <span class="badge badge-outline">Up to 20 active packages</span>
   </div>
-  <section class="panel">
+  <section class="card bg-base-100 border border-base-300 panel">
     <form
       class="inline-form"
       @submit.prevent="
@@ -62,18 +62,19 @@ function remove(id: string) {
     >
       <label
         >NuGet package ID<input
+          class="input input-bordered w-full"
           v-model="packageId"
           required
           pattern="[a-zA-Z0-9_.-]{1,100}"
           placeholder="e.g. Newtonsoft.Json" /></label
       ><label
-        >Project<select v-model="projectId">
+        >Project<select class="select select-bordered" v-model="projectId">
           <option value="">No project / all packages</option>
           <option v-for="p in projects.data.value?.items" :key="p.id" :value="p.id">
             {{ p.name }}{{ p.archived ? ' (archived)' : '' }}
           </option>
         </select></label
-      ><button :disabled="busy">+ Track package</button>
+      ><button class="btn btn-primary" :disabled="busy">+ Track package</button>
     </form>
     <p class="muted small">
       Only listed nuget.org packages. Collection runs hourly for packages due every six hours.
@@ -86,25 +87,29 @@ function remove(id: string) {
       "
     >
       <label
-        >Associate an existing package<select v-model="existingId" required>
+        >Associate an existing package<select
+          class="select select-bordered"
+          v-model="existingId"
+          required
+        >
           <option disabled value="">Select a tracked package</option>
           <option v-for="p in allPackages.data.value?.items" :key="p.id" :value="p.id">
             {{ p.displayName }}
           </option>
         </select></label
-      ><button class="secondary" :disabled="busy">Add to project</button>
+      ><button class="btn btn-outline secondary" :disabled="busy">Add to project</button>
     </form>
   </section>
   <p v-if="error || packages.error.value" role="alert" class="error">
     {{ error || packages.error.value?.message }}
   </p>
-  <section class="panel">
+  <section class="card bg-base-100 border border-base-300 panel">
     <div class="section-heading">
       <h2>Your packages</h2>
       <span class="muted">{{ packages.data.value?.total ?? 0 }} tracked</span>
     </div>
     <div class="table-scroll">
-      <table>
+      <table class="table">
         <thead>
           <tr>
             <th>Package</th>
@@ -132,20 +137,20 @@ function remove(id: string) {
             </td>
             <td class="small">{{ utc(p.lastSuccess) }}</td>
             <td>
-              <span class="badge" :class="{ warning: p.status === 'failed' }">{{
+              <span class="badge badge-outline" :class="{ warning: p.status === 'failed' }">{{
                 p.archived ? 'archived' : p.status
               }}</span>
             </td>
             <td>
               <div class="actions">
                 <button
-                  class="secondary small"
+                  class="btn btn-outline secondary small"
                   :disabled="busy || p.archived"
                   @click="action(() => mutate('/sync/' + p.id + '/refresh', 'POST', {}))"
                 >
                   Refresh</button
                 ><button
-                  class="secondary small"
+                  class="btn btn-outline secondary small"
                   :disabled="busy"
                   @click="
                     action(() => mutate('/packages/' + p.id, 'PATCH', { archived: !p.archived }))
@@ -154,13 +159,17 @@ function remove(id: string) {
                   {{ p.archived ? 'Restore' : 'Archive' }}</button
                 ><button
                   v-if="projectId"
-                  class="secondary small"
+                  class="btn btn-outline secondary small"
                   @click="
                     action(() => mutate('/projects/' + projectId + '/packages/' + p.id, 'DELETE'))
                   "
                 >
                   Unlink</button
-                ><button v-if="p.archived" class="danger small" @click="remove(p.id)">
+                ><button
+                  v-if="p.archived"
+                  class="btn btn-error btn-outline danger small"
+                  @click="remove(p.id)"
+                >
                   Delete history
                 </button>
               </div>

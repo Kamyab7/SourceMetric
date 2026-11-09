@@ -70,11 +70,11 @@ async function action(run: () => Promise<unknown>) {
       <p class="muted">Remember what happened when your growth changed.</p>
     </div>
   </div>
-  <form class="panel note-form" @submit.prevent="save">
+  <form class="card bg-base-100 border border-base-300 panel note-form" @submit.prevent="save">
     <h2>{{ editing ? 'Edit note' : 'Add a note' }}</h2>
     <div class="two-columns">
       <label
-        >Project or package<select v-model="target" required>
+        >Project or package<select class="select select-bordered" v-model="target" required>
           <option disabled value="">Choose a target</option>
           <optgroup label="Projects">
             <option v-for="p in projects.data.value?.items" :key="p.id" :value="'project:' + p.id">
@@ -87,43 +87,56 @@ async function action(run: () => Promise<unknown>) {
             </option>
           </optgroup>
         </select></label
-      ><label>Date and time (UTC)<input v-model="date" type="datetime-local" required /></label>
+      ><label
+        >Date and time (UTC)<input
+          class="input input-bordered w-full"
+          v-model="date"
+          type="datetime-local"
+          required
+      /></label>
     </div>
     <div class="two-columns">
       <label
         >Title<input
+          class="input input-bordered w-full"
           v-model="title"
           maxlength="120"
           required
           placeholder="Launch blog post" /></label
       ><label
-        >Kind<select v-model="kind">
+        >Kind<select class="select select-bordered" v-model="kind">
           <option value="campaign">Campaign</option>
           <option value="release">Release</option>
         </select></label
       >
     </div>
-    <label>Notes<textarea v-model="body" maxlength="2000" rows="3" /></label>
+    <label
+      >Notes<textarea class="textarea textarea-bordered" v-model="body" maxlength="2000" rows="3" />
+    </label>
     <div class="actions">
-      <button :disabled="busy">Save note</button
-      ><button v-if="editing" type="button" class="secondary" @click="reset">Cancel</button>
+      <button class="btn btn-primary" :disabled="busy">Save note</button
+      ><button v-if="editing" type="button" class="btn btn-outline secondary" @click="reset">
+        Cancel
+      </button>
     </div>
   </form>
   <p v-if="error || notes.error.value" class="error" role="alert">
     {{ error || notes.error.value?.message }}
   </p>
-  <section class="panel">
+  <section class="card bg-base-100 border border-base-300 panel">
     <article v-for="note in notes.data.value?.items" :key="note.id" class="timeline">
       <div class="section-heading">
         <div>
-          <span class="badge">{{ note.kind }}{{ note.automatic ? ' · discovered' : '' }}</span>
+          <span class="badge badge-outline"
+            >{{ note.kind }}{{ note.automatic ? ' · discovered' : '' }}</span
+          >
           <h3>{{ note.title }}</h3>
           <p class="small muted">{{ utc(note.occurredAt) }}</p>
         </div>
         <div class="actions">
-          <button class="secondary small" @click="edit(note)">Edit</button
+          <button class="btn btn-outline secondary small" @click="edit(note)">Edit</button
           ><button
-            class="danger small"
+            class="btn btn-error btn-outline danger small"
             @click="action(() => mutate('/annotations/' + note.id, 'DELETE'))"
           >
             Delete

@@ -35,31 +35,37 @@ function rename(id: string, current: string) {
     </div>
   </div>
   <form
-    class="panel inline-form"
+    class="card bg-base-100 border border-base-300 panel inline-form"
     @submit.prevent="action(() => mutate('/projects', 'POST', { name }))"
   >
     <label
       >Project name<input
+        class="input input-bordered w-full"
         v-model="name"
         required
         maxlength="120"
         placeholder="My developer toolkit" /></label
-    ><button :disabled="busy">Create project</button>
+    ><button class="btn btn-primary" :disabled="busy">Create project</button>
   </form>
   <p v-if="error || projects.error.value" class="error" role="alert">
     {{ error || projects.error.value?.message }}
   </p>
   <div class="project-grid">
-    <article v-for="project in projects.data.value?.items" :key="project.id" class="panel">
-      <span class="badge">{{ project.archived ? 'Archived' : 'Project' }}</span>
+    <article
+      v-for="project in projects.data.value?.items"
+      :key="project.id"
+      class="card bg-base-100 border border-base-300 panel"
+    >
+      <span class="badge badge-outline">{{ project.archived ? 'Archived' : 'Project' }}</span>
       <h2>
         <RouterLink :to="'/projects/' + project.id">{{ project.name }} ↗</RouterLink>
       </h2>
       <p class="muted small">Created {{ utc(project.createdAt) }}</p>
       <div class="actions">
-        <button class="secondary" @click="rename(project.id, project.name)">Rename</button
+        <button class="btn btn-outline secondary" @click="rename(project.id, project.name)">
+          Rename</button
         ><button
-          class="secondary"
+          class="btn btn-outline secondary"
           @click="
             action(() =>
               mutate('/projects/' + project.id, 'PATCH', { archived: !project.archived }),
