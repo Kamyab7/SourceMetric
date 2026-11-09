@@ -234,13 +234,13 @@
   .compact {
     @apply py-9 px-2;
   }
-  .timeline {
+  .annotation-entry {
     @apply py-5 border-b border-base-300/60;
   }
-  .timeline:last-child {
+  .annotation-entry:last-child {
     @apply border-0;
   }
-  .timeline h3 {
+  .annotation-entry h3 {
     @apply mt-3 mb-2;
   }
   .preserve {

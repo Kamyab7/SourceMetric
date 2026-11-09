@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sourcemetric-demo",
+  "main": "apps/worker/src/app/index.ts",
+  "compatibility_date": "2026-11-09",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "apps/web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true,
+  },
+  "vars": {
+    "APP_ENV": "local",
+    "DEMO_MODE": "true",
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": "",
+    "APP_ORIGIN": "http://localhost:8790",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sourcemetric-demo",
+      "database_id": "11111111-1111-4111-8111-111111111111",
+      "migrations_dir": "apps/worker/migrations",
+    },
+  ],
+  "observability": { "enabled": true, "traces": { "enabled": true, "head_sampling_rate": 0.1 } },
+}

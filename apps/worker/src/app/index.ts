@@ -35,7 +35,9 @@ app.route('/api/v1/annotations', annotationRoutes);
 app.route('/api/v1/metrics', metricRoutes);
 app.route('/api/v1/sync', syncRoutes);
 app.route('/api/v1/exports', exportRoutes);
-app.get('/api/v1/health', (c) => c.json({ ok: true }));
+app.get('/api/v1/health', (c) =>
+  c.json({ ok: true, demo: c.env.APP_ENV === 'local' && c.env.DEMO_MODE === 'true' }),
+);
 app.all('/api/*', (c) =>
   c.json({ error: { code: 'NOT_FOUND', message: 'API endpoint not found.' } }, 404),
 );
@@ -43,6 +45,7 @@ app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw));
 export default {
   fetch: app.fetch,
   async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext) {
+    if (env.APP_ENV === 'local' && env.DEMO_MODE === 'true') return;
     await collectDue(env.DB);
   },
 } satisfies ExportedHandler<Env>;

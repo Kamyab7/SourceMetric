@@ -124,7 +124,7 @@ async function action(run: () => Promise<unknown>) {
     {{ error || notes.error.value?.message }}
   </p>
   <section class="card bg-base-100 border border-base-300 panel">
-    <article v-for="note in notes.data.value?.items" :key="note.id" class="timeline">
+    <article v-for="note in notes.data.value?.items" :key="note.id" class="annotation-entry">
       <div class="section-heading">
         <div>
           <span class="badge badge-outline"

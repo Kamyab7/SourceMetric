@@ -15,7 +15,9 @@
     "types": "wrangler types apps/worker/src/platform/env.d.ts --include-runtime=false --strict-vars=false",
     "deploy": "pnpm build:web && wrangler deploy --env=\"\"",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "demo": "node scripts/demo.mjs",
+    "test:demo": "playwright test --config playwright.demo.config.ts"
   },
   "dependencies": {
     "@sourcemetric/contracts": "workspace:*",

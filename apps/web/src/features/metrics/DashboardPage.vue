@@ -197,12 +197,18 @@ const shownPackages = computed(
         <div v-if="!metrics.data.value.annotations.length" class="empty compact">
           No notes in this period. <RouterLink to="/annotations">Add a note</RouterLink>
         </div>
-        <article v-for="note in metrics.data.value.annotations" :key="note.id" class="timeline">
-          <span class="badge badge-outline">{{ note.kind }}</span>
-          <h3>{{ note.title }}</h3>
-          <p class="small muted">{{ utc(note.occurredAt) }}</p>
-          <p>{{ note.body }}</p>
-        </article>
+        <div class="max-h-[520px] overflow-y-auto pr-2">
+          <article
+            v-for="note in metrics.data.value.annotations"
+            :key="note.id"
+            class="annotation-entry"
+          >
+            <span class="badge badge-outline">{{ note.kind }}</span>
+            <h3>{{ note.title }}</h3>
+            <p class="small muted">{{ utc(note.occurredAt) }}</p>
+            <p>{{ note.body }}</p>
+          </article>
+        </div>
       </section>
     </div>
   </template>

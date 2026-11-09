@@ -135,3 +135,5 @@ export const syncSchema = z.object({
     }),
   ),
 });
+
+export const healthSchema = z.object({ ok: z.boolean(), demo: z.boolean() });

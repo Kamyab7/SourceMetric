@@ -9,8 +9,16 @@ import {
   LogOut,
   ChevronRight,
 } from '@lucide/vue';
+import { useQuery } from '@tanstack/vue-query';
+import { healthSchema } from '@sourcemetric/contracts';
+import { api } from '../shared/api';
 import { useProjects } from '../features/projects/queries';
 const projects = useProjects();
+const health = useQuery({
+  queryKey: ['health'],
+  queryFn: () => api('/health', healthSchema),
+  staleTime: Infinity,
+});
 const navigation = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
   { to: '/packages', label: 'Packages', icon: Boxes },
@@ -56,10 +64,14 @@ const navigation = [
       </nav>
       <div class="sidebar-footer">
         <div class="flex items-center gap-2">
-          <span class="status status-success" /> Private workspace
+          <span class="status status-success" />
+          {{ health.data.value?.demo ? 'Demo workspace' : 'Private workspace' }}
         </div>
         <p>Self-hosted. Your data stays yours.</p>
-        <a class="flex items-center gap-2" href="/cdn-cgi/access/logout"
+        <a
+          v-if="!health.data.value?.demo"
+          class="flex items-center gap-2"
+          href="/cdn-cgi/access/logout"
           ><LogOut :size="14" aria-hidden="true" />Sign out</a
         >
       </div>
@@ -72,10 +84,22 @@ const navigation = [
             >NuGet insights</span
           ></span
         ><span class="badge badge-outline gap-2"
-          ><ShieldCheck :size="13" aria-hidden="true" />Cloudflare Access</span
+          ><ShieldCheck :size="13" aria-hidden="true" />{{
+            health.data.value?.demo ? 'Demo · synthetic data' : 'Cloudflare Access'
+          }}</span
         >
       </header>
-      <main><RouterView :key="$route.fullPath" /></main>
+      <main>
+        <div
+          v-if="health.data.value?.demo"
+          role="status"
+          class="alert alert-info alert-soft mb-6 text-sm"
+        >
+          Demo workspace · Realistic synthetic data. Read-only; no live registry calls. Restart pnpm
+          run demo to reset.
+        </div>
+        <RouterView :key="$route.fullPath" />
+      </main>
       <footer>
         <span class="flex items-center gap-2"
           ><img

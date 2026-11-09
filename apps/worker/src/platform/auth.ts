@@ -36,6 +36,13 @@ export const security: MiddlewareHandler<AppBindings> = async (c, next) => {
       throw new AppError(401, 'UNAUTHENTICATED', 'Your Access session is invalid or expired.');
     }
   }
+  if (local && c.env.DEMO_MODE === 'true' && !['GET', 'HEAD', 'OPTIONS'].includes(c.req.method)) {
+    throw new AppError(
+      409,
+      'DEMO_READ_ONLY',
+      'Demo mode is read-only. Run pnpm dev to manage your own packages.',
+    );
+  }
   if (!['GET', 'HEAD', 'OPTIONS'].includes(c.req.method)) {
     const origin = c.req.header('Origin');
     const allowed = local

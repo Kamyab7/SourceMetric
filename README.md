@@ -13,6 +13,17 @@ A private, self-hosted growth dashboard for open-source maintainers. Track liste
 
 One deployment is one shared workspace. Everyone admitted by Access has the same permissions.
 
+## Explore the demo
+
+    pnpm install --frozen-lockfile
+    pnpm run demo
+
+Open [localhost:8790](http://localhost:8790). No Cloudflare account, Access setup, or NuGet connection is needed.
+
+The demo includes three projects, six synthetic packages, seven months of six-hour observations, version adoption, release/campaign annotations, and collection activity. All screens and CSV exports use the real Worker API and local D1 queries. Demo mode is read-only and never fetches registry data.
+
+Every launch rebuilds the app and resets **only** the separate demo database in .wrangler/demo-state, with dates refreshed relative to today. Your development and production databases are unaffected. Stop with Ctrl+C. Set DEMO_PORT to choose a different port, for example DEMO_PORT=8791 pnpm run demo.
+
 ## Local development
 
 Requires Node.js 22.12+ and pnpm 11.
@@ -39,6 +50,7 @@ The endpoint is supplied by Wrangler's test-scheduled option, not a production A
     pnpm build
     pnpm exec playwright install chromium
     pnpm test:e2e
+    pnpm test:demo
     pnpm format:check
 
 Tests use the current Cloudflare Vitest plugin and local Workers runtime. Integration tests isolate D1 storage; Playwright uses a separate local state directory. Tests never deploy. Build includes a production Worker packaging dry run.

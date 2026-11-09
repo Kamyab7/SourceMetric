@@ -57,6 +57,8 @@ function render() {
       grid: { left: 65, right: 25, top: 24, bottom: 60 },
       xAxis: {
         type: 'time',
+        min: Date.parse(props.metrics.from),
+        max: Date.parse(props.metrics.to),
         axisLabel: {
           color: '#91a1b8',
           formatter: (v: number) => new Date(v).toISOString().slice(5, 10),
@@ -87,9 +89,11 @@ function render() {
                 symbol: 'none',
                 silent: true,
                 lineStyle: { color: '#a78bfa', type: 'dashed' },
-                data: props.metrics.annotations.map((n) => ({
+                data: [
+                  ...new Map(props.metrics.annotations.map((n) => [n.occurredAt, n])).values(),
+                ].map((n) => ({
                   xAxis: Date.parse(n.occurredAt),
-                  label: { formatter: n.title },
+                  label: { show: false, formatter: n.title },
                 })),
               }
             : undefined,
