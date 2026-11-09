@@ -69,6 +69,8 @@ The endpoint is supplied by Wrangler's test-scheduled option, not a production A
 
 Tests use the current Cloudflare Vitest plugin and local Workers runtime. Integration tests isolate D1 storage; Playwright uses a separate local state directory. Tests never deploy. The check:deploy command validates production Worker packaging with a dry run; build only compiles the Vue app.
 
+Pull requests targeting master run the [CI workflow](.github/workflows/ci.yml): frozen-lockfile installation, formatting, type checks, unit/integration tests, production build and Worker packaging dry run, and both browser suites. Failed browser runs upload screenshots and Playwright traces for seven days. The workflow also supports manual runs and does not deploy or require Cloudflare credentials.
+
 ## Deployment and architecture
 
 - [Deployment, Access, backups, and operations](docs/deployment.md)
