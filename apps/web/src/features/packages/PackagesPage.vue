@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RefreshCw, Archive, ArchiveRestore, Unlink, Trash2, FolderPlus } from '@lucide/vue';
+import StatusBadge from '../../shared/StatusBadge.vue';
 import { ref, computed, watch } from 'vue';
 import Pagination from '../../shared/Pagination.vue';
 import { usePagination } from '../../shared/pagination';
@@ -59,7 +61,7 @@ function remove(id: string) {
       <h1>{{ project ? project.name + ' packages' : 'Tracked packages' }}</h1>
       <p class="muted">NuGet today. A growing view of adoption over time.</p>
     </div>
-    <span class="badge badge-outline">Up to 20 active packages</span>
+    <span class="badge badge-soft badge-primary border-0">Up to 20 active packages</span>
   </div>
   <section class="card bg-base-100 border border-base-300 panel">
     <form
@@ -111,7 +113,12 @@ function remove(id: string) {
             {{ p.displayName }}
           </option>
         </select></label
-      ><button class="btn btn-outline secondary" :disabled="busy">Add to project</button>
+      ><button
+        class="btn btn-sm btn-soft btn-secondary border-0 shadow-none text-secondary"
+        :disabled="busy"
+      >
+        <FolderPlus :size="14" aria-hidden="true" />Add to project
+      </button>
     </form>
   </section>
   <p v-if="error || packages.error.value" role="alert" class="error">
@@ -151,40 +158,42 @@ function remove(id: string) {
             </td>
             <td class="small">{{ utc(p.lastSuccess) }}</td>
             <td>
-              <span class="badge badge-outline" :class="{ warning: p.status === 'failed' }">{{
-                p.archived ? 'archived' : p.status
-              }}</span>
+              <StatusBadge :status="p.archived ? 'archived' : p.status" />
             </td>
             <td>
               <div class="actions">
                 <button
-                  class="btn btn-outline secondary small"
+                  class="btn btn-sm btn-soft btn-primary border-0 shadow-none text-primary"
                   :disabled="busy || p.archived"
                   @click="action(() => mutate('/sync/' + p.id + '/refresh', 'POST', {}))"
                 >
-                  Refresh</button
+                  <RefreshCw :size="14" aria-hidden="true" />Refresh</button
                 ><button
-                  class="btn btn-outline secondary small"
+                  class="btn btn-sm btn-soft btn-warning border-0 shadow-none text-warning"
                   :disabled="busy"
                   @click="
                     action(() => mutate('/packages/' + p.id, 'PATCH', { archived: !p.archived }))
                   "
                 >
-                  {{ p.archived ? 'Restore' : 'Archive' }}</button
+                  <component
+                    :is="p.archived ? ArchiveRestore : Archive"
+                    :size="14"
+                    aria-hidden="true"
+                  />{{ p.archived ? 'Restore' : 'Archive' }}</button
                 ><button
                   v-if="projectId"
-                  class="btn btn-outline secondary small"
+                  class="btn btn-sm btn-soft btn-secondary border-0 shadow-none text-secondary"
                   @click="
                     action(() => mutate('/projects/' + projectId + '/packages/' + p.id, 'DELETE'))
                   "
                 >
-                  Unlink</button
+                  <Unlink :size="14" aria-hidden="true" />Unlink</button
                 ><button
                   v-if="p.archived"
-                  class="btn btn-error btn-outline danger small"
+                  class="btn btn-sm btn-soft btn-error border-0 shadow-none text-error"
                   @click="remove(p.id)"
                 >
-                  Delete history
+                  <Trash2 :size="14" aria-hidden="true" />Delete history
                 </button>
               </div>
             </td>

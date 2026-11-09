@@ -37,7 +37,7 @@ const first = computed(() =>
       <div class="flex items-center gap-1">
         <button
           type="button"
-          class="btn btn-sm btn-outline"
+          class="btn btn-sm btn-ghost border-0 shadow-none"
           :aria-label="'Previous ' + label + ' page'"
           :disabled="busy || page <= 1"
           @click="emit('update:page', page - 1)"
@@ -47,7 +47,7 @@ const first = computed(() =>
           >{{ page }} / {{ pages }}</span
         ><button
           type="button"
-          class="btn btn-sm btn-outline"
+          class="btn btn-sm btn-ghost border-0 shadow-none"
           :aria-label="'Next ' + label + ' page'"
           :disabled="busy || page >= pages"
           @click="emit('update:page', page + 1)"

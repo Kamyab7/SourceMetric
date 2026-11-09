@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Pencil, Trash2, X } from '@lucide/vue';
 import Pagination from '../../shared/Pagination.vue';
 import { usePagination } from '../../shared/pagination';
 import { ref, watch } from 'vue';
@@ -126,8 +127,13 @@ async function action(run: () => Promise<unknown>) {
     </label>
     <div class="actions">
       <button class="btn btn-primary" :disabled="busy">Save note</button
-      ><button v-if="editing" type="button" class="btn btn-outline secondary" @click="reset">
-        Cancel
+      ><button
+        v-if="editing"
+        type="button"
+        class="btn btn-sm btn-soft btn-secondary border-0 shadow-none text-secondary"
+        @click="reset"
+      >
+        <X :size="14" aria-hidden="true" />Cancel
       </button>
     </div>
   </form>
@@ -138,19 +144,25 @@ async function action(run: () => Promise<unknown>) {
     <article v-for="note in notes.data.value?.items" :key="note.id" class="annotation-entry">
       <div class="section-heading">
         <div>
-          <span class="badge badge-outline"
+          <span
+            class="badge badge-soft border-0"
+            :class="note.kind === 'release' ? 'badge-secondary' : 'badge-primary'"
             >{{ note.kind }}{{ note.automatic ? ' · discovered' : '' }}</span
           >
           <h3>{{ note.title }}</h3>
           <p class="small muted">{{ utc(note.occurredAt) }}</p>
         </div>
         <div class="actions">
-          <button class="btn btn-outline secondary small" @click="edit(note)">Edit</button
+          <button
+            class="btn btn-sm btn-soft btn-secondary border-0 shadow-none text-secondary"
+            @click="edit(note)"
+          >
+            <Pencil :size="14" aria-hidden="true" />Edit</button
           ><button
-            class="btn btn-error btn-outline danger small"
+            class="btn btn-sm btn-soft btn-error border-0 shadow-none text-error"
             @click="action(() => mutate('/annotations/' + note.id, 'DELETE'))"
           >
-            Delete
+            <Trash2 :size="14" aria-hidden="true" />Delete
           </button>
         </div>
       </div>

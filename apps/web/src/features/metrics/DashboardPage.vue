@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import StatusBadge from '../../shared/StatusBadge.vue';
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import type { MetricRange } from '@sourcemetric/contracts';
@@ -82,9 +83,7 @@ const shownPackages = computed(
       <span>Stable: {{ pkg.data.value.latestStable ?? '—' }}</span>
       <span>Prerelease: {{ pkg.data.value.latestPrerelease ?? '—' }}</span>
       <span>Last success: {{ utc(pkg.data.value.lastSuccess) }}</span>
-      <span class="badge badge-outline">{{
-        pkg.data.value.archived ? 'Archived' : pkg.data.value.status
-      }}</span>
+      <StatusBadge :status="pkg.data.value.archived ? 'archived' : pkg.data.value.status" />
     </div>
   </section>
   <div class="toolbar">
@@ -151,9 +150,10 @@ const shownPackages = computed(
           <h2>Growth over time</h2>
           <p class="muted small">Observed intervals, not reconstructed daily downloads.</p>
         </div>
-        <span class="badge badge-outline" :class="{ warning: metrics.data.value.stale }">{{
-          metrics.data.value.stale ? 'Data needs attention' : 'Collection active'
-        }}</span>
+        <StatusBadge
+          :status="metrics.data.value.stale ? 'queued' : 'success'"
+          :label="metrics.data.value.stale ? 'Data needs attention' : 'Collection active'"
+        />
       </div>
       <GrowthChart
         v-if="metrics.data.value.points.length"
@@ -228,7 +228,11 @@ const shownPackages = computed(
         </div>
         <div class="max-h-[520px] overflow-y-auto pr-2">
           <article v-for="note in notes.items.value" :key="note.id" class="annotation-entry">
-            <span class="badge badge-outline">{{ note.kind }}</span>
+            <span
+              class="badge badge-soft border-0"
+              :class="note.kind === 'release' ? 'badge-secondary' : 'badge-primary'"
+              >{{ note.kind }}</span
+            >
             <h3>{{ note.title }}</h3>
             <p class="small muted">{{ utc(note.occurredAt) }}</p>
             <p>{{ note.body }}</p>

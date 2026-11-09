@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import StatusBadge from '../../shared/StatusBadge.vue';
 import { ref, watch } from 'vue';
 import Pagination from '../../shared/Pagination.vue';
 import { usePagination } from '../../shared/pagination';
@@ -58,14 +59,17 @@ watch(
         <tbody>
           <tr v-for="p in sync.data.value?.packages" :key="p.id">
             <td>{{ p.displayName }}</td>
-            <td>{{ utc(p.lastAttempt) }}</td>
-            <td>{{ utc(p.lastSuccess) }}</td>
-            <td>{{ p.archived ? 'Archived' : utc(p.nextAttempt) }}</td>
+            <td class="whitespace-nowrap">{{ utc(p.lastAttempt) }}</td>
+            <td class="whitespace-nowrap">{{ utc(p.lastSuccess) }}</td>
+            <td class="whitespace-nowrap">{{ p.archived ? 'Archived' : utc(p.nextAttempt) }}</td>
             <td>
-              <span class="badge badge-outline" :class="{ warning: !!p.lastError }">{{
-                p.status
-              }}</span>
-              <p class="error small">{{ p.lastError }}</p>
+              <StatusBadge :status="p.archived ? 'archived' : p.status" />
+              <p
+                v-if="p.lastError"
+                class="mt-1 max-w-40 break-words text-[10px] leading-relaxed text-error/80"
+              >
+                {{ p.lastError }}
+              </p>
             </td>
           </tr>
         </tbody>
@@ -81,26 +85,33 @@ watch(
   </section>
   <section class="card bg-base-100 border border-base-300 panel">
     <h2>Recent collection attempts</h2>
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Package</th>
-          <th>Started</th>
-          <th>Status</th>
-          <th>Error</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="a in sync.data.value?.attempts" :key="a.id">
-          <td>
-            {{ a.packageName }}
-          </td>
-          <td>{{ utc(a.startedAt) }}</td>
-          <td>{{ a.status }}</td>
-          <td>{{ a.error ?? '—' }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Package</th>
+            <th>Started</th>
+            <th>Status</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="a in sync.data.value?.attempts" :key="a.id">
+            <td>
+              {{ a.packageName }}
+            </td>
+            <td>{{ utc(a.startedAt) }}</td>
+            <td><StatusBadge :status="a.status" /></td>
+            <td
+              class="max-w-48 break-words text-xs"
+              :class="a.error ? 'text-error/80' : 'text-slate-500'"
+            >
+              {{ a.error ?? '—' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <Pagination
       v-model:page="attempts.page.value"
       v-model:page-size="attempts.pageSize.value"

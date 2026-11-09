@@ -6,6 +6,7 @@ import {
   Megaphone,
   LayoutDashboard,
   ShieldCheck,
+  FlaskConical,
   LogOut,
   ChevronRight,
 } from '@lucide/vue';
@@ -85,10 +86,13 @@ const navigation = [
           ><ChevronRight :size="12" aria-hidden="true" /><span class="muted"
             >NuGet insights</span
           ></span
-        ><span class="badge badge-outline gap-2"
-          ><ShieldCheck :size="13" aria-hidden="true" />{{
-            health.data.value?.demo ? 'Demo · synthetic data' : 'Cloudflare Access'
-          }}</span
+        ><span class="flex items-center gap-2 text-[11px] text-slate-400"
+          ><component
+            :is="health.data.value?.demo ? FlaskConical : ShieldCheck"
+            :size="14"
+            class="text-primary"
+            aria-hidden="true"
+          />{{ health.data.value?.demo ? 'Demo · synthetic data' : 'Cloudflare Access' }}</span
         >
       </header>
       <main>

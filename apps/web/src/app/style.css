@@ -170,10 +170,10 @@
     @apply flex justify-between items-center gap-4 mb-3;
   }
   .badge {
-    @apply text-[10px] font-medium border-primary/20 text-primary bg-primary/5;
+    @apply text-[10px] font-medium rounded-full px-2.5 py-1;
   }
   .badge.warning {
-    @apply badge-warning bg-warning/10 text-warning border-warning/25;
+    @apply bg-warning/10 text-warning border-0;
   }
   .chart {
     @apply h-[330px] w-full my-5;
@@ -211,10 +211,10 @@
     @apply flex flex-col gap-5;
   }
   .secondary {
-    @apply border-base-300 text-slate-300 hover:border-primary/50 hover:text-primary;
+    @apply text-slate-300 hover:bg-primary/10 hover:text-primary;
   }
   .danger {
-    @apply text-error border-error/30;
+    @apply text-error;
   }
   .error {
     @apply text-error bg-error/10 rounded-lg p-3 text-sm;

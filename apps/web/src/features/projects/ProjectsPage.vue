@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Pencil, Archive, ArchiveRestore, ArrowUpRight } from '@lucide/vue';
 import Pagination from '../../shared/Pagination.vue';
 import { usePagination } from '../../shared/pagination';
 import { ref, watch } from 'vue';
@@ -45,19 +46,25 @@ function rename(id: string, current: string) {
       <p class="muted">Bring related packages together. Shared packages are counted once.</p>
     </div>
   </div>
-  <form
-    class="card bg-base-100 border border-base-300 panel inline-form"
-    @submit.prevent="action(() => mutate('/projects', 'POST', { name }))"
-  >
-    <label
-      >Project name<input
-        class="input input-bordered w-full"
-        v-model="name"
-        required
-        maxlength="120"
-        placeholder="My developer toolkit" /></label
-    ><button class="btn btn-primary" :disabled="busy">Create project</button>
-  </form>
+  <section class="card bg-base-100 border border-base-300 panel">
+    <form
+      class="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+      @submit.prevent="action(() => mutate('/projects', 'POST', { name }))"
+    >
+      <div class="min-w-0">
+        <label for="project-name" class="mb-2 block text-xs text-slate-400">Project name</label>
+        <input
+          id="project-name"
+          class="input input-bordered h-11 w-full"
+          v-model="name"
+          required
+          maxlength="120"
+          placeholder="My developer toolkit"
+        />
+      </div>
+      <button class="btn btn-primary h-11 w-full sm:w-auto" :disabled="busy">Create project</button>
+    </form>
+  </section>
   <p v-if="error || projects.error.value" class="error" role="alert">
     {{ error || projects.error.value?.message }}
   </p>
@@ -67,24 +74,37 @@ function rename(id: string, current: string) {
       :key="project.id"
       class="card bg-base-100 border border-base-300 panel"
     >
-      <span class="badge badge-outline">{{ project.archived ? 'Archived' : 'Project' }}</span>
+      <span class="badge badge-soft badge-primary border-0">{{
+        project.archived ? 'Archived' : 'Project'
+      }}</span>
       <h2>
         <RouterLink :to="'/projects/' + project.id">{{ project.name }} ↗</RouterLink>
       </h2>
       <p class="muted small">Created {{ utc(project.createdAt) }}</p>
       <div class="actions">
-        <button class="btn btn-outline secondary" @click="rename(project.id, project.name)">
-          Rename</button
+        <button
+          class="btn btn-sm btn-soft btn-secondary border-0 shadow-none text-secondary"
+          @click="rename(project.id, project.name)"
+        >
+          <Pencil :size="14" aria-hidden="true" />Rename</button
         ><button
-          class="btn btn-outline secondary"
+          class="btn btn-sm btn-soft btn-warning border-0 shadow-none text-warning"
           @click="
             action(() =>
               mutate('/projects/' + project.id, 'PATCH', { archived: !project.archived }),
             )
           "
         >
-          {{ project.archived ? 'Restore' : 'Archive' }}</button
-        ><RouterLink :to="'/packages?projectId=' + project.id">Manage packages →</RouterLink>
+          <component
+            :is="project.archived ? ArchiveRestore : Archive"
+            :size="14"
+            aria-hidden="true"
+          />{{ project.archived ? 'Restore' : 'Archive' }}</button
+        ><RouterLink
+          class="btn btn-sm btn-soft btn-primary border-0 shadow-none text-primary"
+          :to="'/packages?projectId=' + project.id"
+          ><ArrowUpRight :size="14" aria-hidden="true" />Manage packages</RouterLink
+        >
       </div>
     </article>
   </div>
