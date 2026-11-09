@@ -5,7 +5,6 @@ import {
   FolderKanban,
   Megaphone,
   LayoutDashboard,
-  Orbit,
   ShieldCheck,
   LogOut,
   ChevronRight,
@@ -23,12 +22,15 @@ const navigation = [
 <template>
   <div class="shell">
     <aside>
-      <RouterLink to="/" class="brand"
-        ><span class="brand-icon"><Orbit :size="24" aria-hidden="true" /></span>SourceMetric<span
-          class="badge badge-outline text-[9px]"
-          >01</span
-        ></RouterLink
-      >
+      <RouterLink to="/" class="brand" aria-label="SourceMetric home">
+        <img
+          src="/brand/sourcemetric-wordmark.svg"
+          alt="SourceMetric"
+          width="200"
+          height="41"
+          class="w-full h-auto"
+        />
+      </RouterLink>
       <p class="workspace-label">WORKSPACE / CONTROL CENTER</p>
       <nav class="menu w-full p-0 gap-1" aria-label="Main navigation">
         <RouterLink
@@ -76,7 +78,13 @@ const navigation = [
       <main><RouterView :key="$route.fullPath" /></main>
       <footer>
         <span class="flex items-center gap-2"
-          ><Orbit :size="13" aria-hidden="true" />SourceMetric</span
+          ><img
+            src="/brand/sourcemetric-mark.svg"
+            alt=""
+            width="18"
+            height="18"
+            aria-hidden="true"
+          />SourceMetric</span
         ><span>OPEN SOURCE INTELLIGENCE · UTC</span>
       </footer>
     </div>
