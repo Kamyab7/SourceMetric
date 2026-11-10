@@ -5,7 +5,7 @@
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https%3A%2F%2Fgithub.com%2FKamyab7%2FSourceMetric)
 
-A private, self-hosted growth dashboard for open-source maintainers. Track listed NuGet packages, retain download observations, and add release or campaign notes.
+A private, self-hosted growth dashboard for open-source maintainers. Track listed NuGet packages and GitHub repositories, retain download/clone history and star/fork snapshots, and add release or campaign notes.
 
 ## Deploy to Cloudflare
 
@@ -18,6 +18,7 @@ In the deployment form, keep the repository root as the project directory, use *
 ## Included
 
 - Vue 3 dashboard with a dark Tailwind CSS/daisyUI theme, self-hosted Inter, Lucide icons, and workspace, project, and package views, date filters, version channels, ECharts trends, and CSV exports.
+- GitHub repository management, project associations, clone history, star/fork net change, charts, CSV exports, and collection health. Optional deployment-level `GITHUB_TOKEN` secret; see [setup](docs/deployment.md#github-repository-metrics).
 - Projects with shared packages, archive/restore, and explicit permanent history deletion.
 - NuGet service discovery, exact package resolution, package/version counters, and version discovery notes.
 - Hourly Worker scheduling, six-hour per-package cadence, bounded collection, expiring D1 leases, retries, and collection status.
@@ -33,7 +34,7 @@ One deployment is one shared workspace. Everyone admitted by Access has the same
 
 Open [localhost:8790](http://localhost:8790). No Cloudflare account, Access setup, or NuGet connection is needed.
 
-The demo includes three projects, six synthetic packages, seven months of six-hour observations, version adoption, release/campaign annotations, and collection activity. All screens and CSV exports use the real Worker API and local D1 queries. Demo mode is read-only and never fetches registry data.
+The demo includes three projects, six synthetic packages, seven months of six-hour observations, version adoption, three GitHub repositories with snapshot/clone histories and partial failures, release/campaign annotations, and collection activity. All screens and CSV exports use the real Worker API and local D1 queries. Demo mode is read-only and never fetches registry or GitHub data.
 
 Every launch rebuilds the app and resets **only** the separate demo database in .wrangler/demo-state, with dates refreshed relative to today. Your development and production databases are unaffected. Stop with Ctrl+C. Set DEMO_PORT to choose a different port, for example DEMO_PORT=8791 pnpm run demo.
 

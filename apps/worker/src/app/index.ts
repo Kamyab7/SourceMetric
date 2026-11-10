@@ -10,6 +10,13 @@ import { metricRoutes } from '../features/metrics/routes';
 import { syncRoutes } from '../features/sync/routes';
 import { exportRoutes } from '../features/exports/routes';
 import { collectDue } from '../features/sync/collector';
+import {
+  repositoryRoutes,
+  repositorySyncRoutes,
+  repositoryMetricRoutes,
+  repositoryExportRoutes,
+} from '../features/repositories/routes';
+import { collectRepositories } from '../features/repositories/collector';
 export const app = new Hono<AppBindings>();
 app.onError((error, c) => {
   if (error instanceof AppError)
@@ -29,6 +36,10 @@ app.use(
       c.json({ error: { code: 'INVALID_INPUT', message: 'Request body is too large.' } }, 413),
   }),
 );
+app.route('/api/v1/repositories', repositoryRoutes);
+app.route('/api/v1/repository-sync', repositorySyncRoutes);
+app.route('/api/v1/repository-metrics', repositoryMetricRoutes);
+app.route('/api/v1/repository-exports', repositoryExportRoutes);
 app.route('/api/v1/projects', projectRoutes);
 app.route('/api/v1/packages', packageRoutes);
 app.route('/api/v1/annotations', annotationRoutes);
@@ -46,6 +57,12 @@ export default {
   fetch: app.fetch,
   async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext) {
     if (env.APP_ENV === 'local' && env.DEMO_MODE === 'true') return;
-    await collectDue(env.DB);
+    // Separate budgets ensure repository failures cannot starve package collection.
+    const outcomes = await Promise.allSettled([
+      collectDue(env.DB),
+      collectRepositories(env.DB, { token: env.GITHUB_TOKEN }),
+    ]);
+    if (outcomes.some((result) => result.status === 'rejected'))
+      throw new Error('Scheduled collection failed');
   },
 } satisfies ExportedHandler<Env>;

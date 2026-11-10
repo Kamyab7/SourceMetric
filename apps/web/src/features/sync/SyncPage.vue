@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RepositorySyncPanel from '../repositories/RepositorySyncPanel.vue';
 import StatusBadge from '../../shared/StatusBadge.vue';
 import { ref, watch } from 'vue';
 import Pagination from '../../shared/Pagination.vue';
@@ -124,4 +125,5 @@ watch(
     Stored observations grow with packages × versions × collections. Review D1 storage usage in
     Cloudflare; free-tier hosting is not unlimited.
   </p>
+  <RepositorySyncPanel />
 </template>

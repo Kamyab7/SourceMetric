@@ -1,6 +1,7 @@
 // Deterministic synthetic NuGet data; no network or Cloudflare account required.
 export const demoIds = {
   projects: [1, 2, 3].map((n) => '10000000-0000-4000-8000-' + String(n).padStart(12, '0')),
+  repositories: [1, 2, 3].map((n) => '50000000-0000-4000-8000-' + String(n).padStart(12, '0')),
   packages: [1, 2, 3, 4, 5, 6].map((n) => '20000000-0000-4000-8000-' + String(n).padStart(12, '0')),
 };
 const DAY = 86400000,
@@ -230,10 +231,98 @@ export function createDemoFixture(now = new Date()) {
       ],
     ),
   );
+  demoIds.repositories.forEach((id, n) => {
+    const last = at(slots * 6),
+      name = ['nebula/platform', 'pulse/observability', 'orbit/tools'][n];
+    row(
+      'repositories',
+      [
+        'id',
+        'github_id',
+        'full_name',
+        'url',
+        'description',
+        'private',
+        'created_at',
+        'last_success',
+        'traffic_success',
+        'traffic_error',
+      ],
+      [
+        id,
+        String(100 + n),
+        name,
+        'https://github.com/' + name,
+        'Synthetic GitHub repository',
+        n === 2 ? 1 : 0,
+        at(0),
+        last,
+        n === 2 ? at((slots - 4) * 6) : last,
+        n === 2 ? 'GITHUB_ACCESS_DENIED' : null,
+      ],
+    );
+    row('project_repositories', ['project_id', 'repository_id'], [demoIds.projects[n], id]);
+    row(
+      'repository_jobs',
+      ['repository_id', 'next_attempt', 'last_attempt', 'status', 'last_error'],
+      [
+        id,
+        at((slots + 1) * 6),
+        last,
+        n === 2 ? 'partial' : 'success',
+        n === 2 ? 'GITHUB_ACCESS_DENIED' : null,
+      ],
+    );
+    for (let slot = 0; slot <= slots; slot++) {
+      if (n === 1 && slot >= slots - 20 && slot <= slots - 18) continue;
+      row(
+        'repository_snapshots',
+        ['repository_id', 'observed_at', 'stars', 'forks'],
+        [
+          id,
+          at(slot * 6),
+          100 + n * 200 + Math.floor(slot / 3) - (slot > slots - 16 ? 8 : 0),
+          20 + n * 30 + Math.floor(slot / 15),
+        ],
+      );
+    }
+    for (let day = 0; day <= Math.floor(slots / 4); day++) {
+      if (n === 2 && day >= 209) continue;
+      row(
+        'repository_clones',
+        ['repository_id', 'day', 'count', 'uniques', 'observed_at', 'provisional'],
+        [id, at(day * 24), 8 + n * 5 + (day % 9), 4 + n + (day % 4), last, day === 210 ? 1 : 0],
+      );
+    }
+    for (let attempt = 0; attempt < 8; attempt++)
+      row(
+        'repository_attempts',
+        ['id', 'repository_id', 'started_at', 'finished_at', 'status', 'error'],
+        [
+          'repo-demo-' + n + '-' + attempt,
+          id,
+          at((slots - attempt) * 6),
+          at((slots - attempt) * 6),
+          n === 2 ? 'partial' : 'success',
+          n === 2 ? 'GITHUB_ACCESS_DENIED' : null,
+        ],
+      );
+  });
+  row(
+    'project_repositories',
+    ['project_id', 'repository_id'],
+    [demoIds.projects[2], demoIds.repositories[0]],
+  );
   // Foreign-key-safe import order. Only the dedicated demo database is reset.
-  const sql = ['DELETE FROM projects;', 'DELETE FROM packages;'];
+  const sql = ['DELETE FROM projects;', 'DELETE FROM packages;', 'DELETE FROM repositories;'];
   for (const table of [
     'projects',
+    'repositories',
+    'project_repositories',
+    'repository_jobs',
+    'repository_snapshots',
+    'repository_clones',
+    'repository_attempts',
     'packages',
     'project_packages',
     'collection_jobs',

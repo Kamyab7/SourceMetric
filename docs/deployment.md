@@ -68,3 +68,15 @@ Worker rollback does not roll back D1 migrations. Future migrations should suppo
 Local development uses .wrangler/state; Playwright uses .wrangler/e2e-state. Test bindings never reference remote resources. Production rejects missing Access configuration. There are no public data endpoints or badges.
 
 References: [Deploy button setup](https://developers.cloudflare.com/workers/platform/deploy-buttons/), [Access JWT validation](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/), [Workers configuration](https://developers.cloudflare.com/workers/wrangler/configuration/), [D1 Time Travel](https://developers.cloudflare.com/d1/reference/time-travel/).
+
+## GitHub repository metrics
+
+GitHub tracking is optional and does not affect NuGet collection. Create a fine-grained personal access token for the resource owner and select every repository you intend to track. Grant **Metadata: read** and **Administration: read** (needed for clone traffic). Your GitHub account also needs the repository access required by GitHub's traffic API. Organization approval or SSO policies may apply. A token belongs to one resource owner; track repositories it can access.
+
+Store it as a Worker secret using `pnpm exec wrangler secret put GITHUB_TOKEN --env=""`. For local development put `GITHUB_TOKEN=...` in the ignored `.dev.vars.local` file. Never place tokens in Wrangler vars or browser settings. Rotate or renew the secret before token expiry. No application restart or database migration is needed after rotation; failed jobs retry or can be queued through Refresh.
+
+Open **Repositories**, resolve an `owner/repo` name or HTTPS github.com URL, then track it and optionally select a project. Repositories can be shared across projects. Archive before permanently deleting history. Archiving retains data and frees an active slot; it does not stop an already running collection. All users admitted by Access can view all tracked data, including private repository names and counts.
+
+Missing configuration, token access failures, rate limits, and partial traffic failures appear in Collection health. A metadata success with a traffic failure retains stars/forks and records a partial attempt. Repository HTTP responses never include the token or upstream error bodies.
+
+Repository collection adds up to four jobs to each scheduled run in addition to the four package jobs. Validate combined CPU, subrequests, D1 statements, storage growth, and latency on staging using 20 packages and 20 repositories across at least two six-hour cycles. This change does not establish free-tier suitability; reduce the workload or upgrade if measured usage exceeds your plan. No live-account benchmark has been performed.

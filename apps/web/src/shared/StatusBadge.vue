@@ -5,6 +5,7 @@ const tone = computed(
   () =>
     ({
       success: 'badge-success',
+      partial: 'badge-warning',
       failed: 'badge-error',
       interrupted: 'badge-warning',
       queued: 'badge-warning',

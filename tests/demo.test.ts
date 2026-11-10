@@ -9,6 +9,8 @@ it('seeds realistic data with complete default trends, versions, notes, and coll
   expect(createDemoFixture(now).sql).toBe(fixture.sql);
   expect(fixture.counts.projects).toBe(3);
   expect(fixture.counts.packages).toBe(6);
+  expect(fixture.counts.repositories).toBe(3);
+  expect(fixture.counts.repository_snapshots).toBeGreaterThan(2000);
   expect(fixture.counts.observations).toBeGreaterThan(10000);
   const statements = fixture.sql.split('\n').filter(Boolean);
   for (let i = 0; i < statements.length; i += 30)
@@ -39,6 +41,17 @@ it('seeds realistic data with complete default trends, versions, notes, and coll
     bindings,
   );
   expect(project.status).toBe(200);
+  const repositories = await app.request(
+    'http://localhost:8790/api/v1/repository-metrics?from=2026-10-10T00:00:00Z&to=2026-11-09T00:00:00Z',
+    {},
+    bindings,
+  );
+  expect(repositories.status).toBe(200);
+  expect(await repositories.json()).toMatchObject({
+    stars: { latest: expect.any(Number) },
+    repositories: expect.any(Array),
+    clones: { total: expect.any(Number), complete: false },
+  });
   const health = await app.request('http://localhost:8790/api/v1/health', {}, bindings);
   expect(await health.json()).toEqual({ ok: true, demo: true });
 });

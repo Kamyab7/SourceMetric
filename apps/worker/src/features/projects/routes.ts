@@ -3,7 +3,24 @@ import { idSchema, paginationSchema, projectInput, projectPatch } from '@sourcem
 import { body, parse, type AppBindings } from '../../platform/http';
 import { notFound, AppError } from '../../platform/errors';
 import * as repo from './repository';
+import { associateRepository } from '../repositories/repository';
 export const projectRoutes = new Hono<AppBindings>()
+  .put('/:id/repositories/:repositoryId', async (c) => {
+    await associateRepository(
+      c.env.DB,
+      parse(idSchema, c.req.param('id')),
+      parse(idSchema, c.req.param('repositoryId')),
+    );
+    return c.json({ ok: true });
+  })
+  .delete('/:id/repositories/:repositoryId', async (c) => {
+    await c.env.DB.prepare(
+      'DELETE FROM project_repositories WHERE project_id=? AND repository_id=?',
+    )
+      .bind(parse(idSchema, c.req.param('id')), parse(idSchema, c.req.param('repositoryId')))
+      .run();
+    return c.json({ ok: true });
+  })
   .get('/', async (c) => {
     const p = parse(paginationSchema, c.req.query());
     return c.json(await repo.listProjects(c.env.DB, p.limit, p.offset));

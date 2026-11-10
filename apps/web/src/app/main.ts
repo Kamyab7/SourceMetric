@@ -12,6 +12,14 @@ const router = createRouter({
     { path: '/projects/:projectId', component: dashboard },
     { path: '/packages/:packageId', component: dashboard },
     { path: '/projects', component: () => import('../features/projects/ProjectsPage.vue') },
+    {
+      path: '/repositories',
+      component: () => import('../features/repositories/RepositoriesPage.vue'),
+    },
+    {
+      path: '/repositories/:repositoryId',
+      component: () => import('../features/repositories/RepositoryPage.vue'),
+    },
     { path: '/packages', component: () => import('../features/packages/PackagesPage.vue') },
     {
       path: '/annotations',

@@ -9,6 +9,7 @@ import Pagination from '../../shared/Pagination.vue';
 import { usePagination, useClientPagination } from '../../shared/pagination';
 import { useMetrics, useVersions } from './queries';
 import { number, utc } from '../../shared/api';
+import RepositoryMetricsPanel from '../repositories/RepositoryMetricsPanel.vue';
 import GrowthChart from './GrowthChart.vue';
 import ExportButton from '../exports/ExportButton.vue';
 const route = useRoute(),
@@ -248,4 +249,8 @@ const shownPackages = computed(
       </section>
     </div>
   </template>
+  <RepositoryMetricsPanel
+    v-if="!packageId"
+    :range="{ from: range.from, to: range.to, ...(projectId ? { projectId } : {}) }"
+  />
 </template>

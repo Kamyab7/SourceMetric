@@ -50,3 +50,21 @@ Failures retain observations and persist a safe category with exponential retry 
 Only NuGet is implemented. It discovers its search endpoint, includes prereleases and SemVer 2, and exact-matches IDs case-insensitively. It trusts HTTPS nuget.org endpoints only, limits responses to 2 MB, and times out requests after 12 seconds. Unlisted packages are unavailable, never zero.
 
 Adapters return the shared measurement model, not database rows. No registry inheritance hierarchy or placeholder npm/PyPI implementation is needed.
+
+## Repository tracking
+
+GitHub repository providers use a separate `RepositoryProvider` interface, not `PackageProvider`. `GITHUB_TOKEN` is an optional deployment secret. Repository identity uses the upstream numeric ID; collection resolves `/repositories/:id` and uses the returned current name for traffic. Requests only target api.github.com, validate redirects before resending credentials, enforce timeouts and a 2 MB response bound, and validate upstream metadata/buckets.
+
+Additive repository tables store entities, project associations, jobs, attempts, snapshots, and clone days. Claim/attempt bookkeeping and success commits use atomic D1 batches with lease-token fences on every write; stale failures cannot overwrite a replacement attempt. The scheduler awaits both independently budgeted collectors even if one fails. Traffic-only errors commit metadata and a partial attempt; source retry/reset delays apply to the next attempt.
+
+New `/api/v1` resources:
+
+| Resource                                                      | Operations                                                                                                        |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `/repositories`, `/repositories/resolve`, `/repositories/:id` | Paginated list (optional projectId), register, resolve, get, archive/restore, confirmed archived history deletion |
+| `/projects/:id/repositories/:repositoryId`                    | PUT associate, DELETE unlink                                                                                      |
+| `/repository-metrics`                                         | GET with from/to and optional projectId/repositoryId; same 366-day maximum                                        |
+| `/repository-exports`                                         | GET CSV using repository metric filters                                                                           |
+| `/repository-sync`, `/repository-sync/:id/refresh`            | GET attempts and schedules, POST queue with five-minute cooldown                                                  |
+
+Repository sync accepts `limit`/`offset` for attempts and `repositoryLimit`/`repositoryOffset` for schedules. Repository list selectors fetch every page. Package APIs and provider contracts remain compatible. Demo mode blocks all mutations before adapters run and bypasses both scheduled collectors.

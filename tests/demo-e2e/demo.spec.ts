@@ -60,3 +60,39 @@ test('real demo lists page independently and reset when dashboard filters change
     page.getByRole('navigation', { name: 'collection schedule pagination' }),
   ).toContainText('1–6 of 6');
 });
+
+test('GitHub demo histories render at workspace, project and repository scope and export daily uniques', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { name: 'Repository metrics', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('img', { name: /GitHub stars by repository/ })).toBeVisible();
+  await page.getByLabel('Chart metric').selectOption('uniques');
+  await expect(page.getByRole('img', { name: /GitHub uniques by repository/ })).toBeVisible();
+  await page.getByRole('link', { name: 'nebula/platform', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'nebula/platform', exact: true })).toBeVisible();
+  await page.getByLabel('Range', { exact: true }).selectOption('7');
+  const download = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Export repository CSV' }).click();
+  expect((await download).suggestedFilename()).toBe('sourcemetric-repositories.csv');
+  await page.getByRole('link', { name: 'Repositories', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'orbit/tools', exact: true })).toBeVisible();
+  await page
+    .getByLabel('Repository project', { exact: true })
+    .selectOption({ label: 'Nebula Platform' });
+  await expect(page.getByRole('link', { name: 'nebula/platform', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'orbit/tools', exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Nebula Platform', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Repository metrics', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Collection health', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Repository collection schedule' })).toBeVisible();
+  await expect(page.getByText('GITHUB_ACCESS_DENIED', { exact: true }).first()).toBeVisible();
+  await page.screenshot({ path: 'test-results/demo-repositories.png', fullPage: true });
+  expect(errors).toEqual([]);
+});

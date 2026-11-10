@@ -152,3 +152,97 @@ export const versionSchema = z.object({
   downloads: z.number(),
   observedAt: z.string(),
 });
+
+// Repository metrics are independent of package/download providers.
+export const repositoryInput = z.object({
+  repository: z.string().trim().min(3).max(240),
+  projectId: idSchema.optional(),
+});
+export const repositoryMetadataSchema = z.object({
+  githubId: z.string(),
+  fullName: z.string(),
+  url: z.url(),
+  description: z.string(),
+  private: z.boolean(),
+  stars: z.number().int().nonnegative(),
+  forks: z.number().int().nonnegative(),
+});
+export const repositorySchema = repositoryMetadataSchema.omit({ stars: true, forks: true }).extend({
+  id: idSchema,
+  provider: z.literal('github'),
+  archived: z.boolean(),
+  createdAt: z.string(),
+  lastSuccess: z.string().nullable(),
+  trafficSuccess: z.string().nullable(),
+  trafficError: z.string().nullable(),
+  lastAttempt: z.string().nullable(),
+  nextAttempt: z.string(),
+  lastError: z.string().nullable(),
+  status: z.string(),
+});
+export type TrackedRepository = z.infer<typeof repositorySchema>;
+export const repositoryRangeSchema = z
+  .object({
+    from: z.iso.datetime().transform((v) => new Date(v).toISOString()),
+    to: z.iso.datetime().transform((v) => new Date(v).toISOString()),
+    projectId: idSchema.optional(),
+    repositoryId: idSchema.optional(),
+  })
+  .refine((v) => Date.parse(v.from) < Date.parse(v.to), 'from must precede to')
+  .refine(
+    (v) => Date.parse(v.to) - Date.parse(v.from) <= 366 * 86400000,
+    'Maximum range is 366 days',
+  );
+export type RepositoryRange = z.infer<typeof repositoryRangeSchema>;
+export const repositorySnapshotSchema = z.object({
+  repositoryId: idSchema,
+  observedAt: z.string(),
+  stars: z.number(),
+  forks: z.number(),
+});
+export const repositoryCloneSchema = z.object({
+  repositoryId: idSchema,
+  day: z.string(),
+  count: z.number(),
+  uniques: z.number(),
+  observedAt: z.string(),
+  provisional: z.boolean(),
+});
+const repositoryGaugeSchema = z.object({
+  latest: z.number().nullable(),
+  change: z.number().nullable(),
+  comparison: z.number().nullable(),
+  complete: z.boolean(),
+});
+export const repositoryMetricsSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  repositories: z.array(repositorySchema),
+  stars: repositoryGaugeSchema,
+  forks: repositoryGaugeSchema,
+  clones: z.object({
+    total: z.number().nullable(),
+    complete: z.boolean(),
+    comparison: z.number().nullable(),
+  }),
+  snapshots: z.array(repositorySnapshotSchema),
+  days: z.array(repositoryCloneSchema),
+  truncated: z.boolean(),
+});
+export type RepositoryMetrics = z.infer<typeof repositoryMetricsSchema>;
+export const repositorySyncSchema = z.object({
+  repositories: z.array(repositorySchema),
+  repositoryTotal: z.number(),
+  attemptTotal: z.number(),
+  attempts: z.array(
+    z.object({
+      id: z.string(),
+      repositoryId: idSchema,
+      repositoryName: z.string(),
+      startedAt: z.string(),
+      finishedAt: z.string().nullable(),
+      status: z.string(),
+      error: z.string().nullable(),
+    }),
+  ),
+});

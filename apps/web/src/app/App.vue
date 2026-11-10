@@ -2,6 +2,7 @@
 import {
   Activity,
   Boxes,
+  GitFork,
   FolderKanban,
   Megaphone,
   LayoutDashboard,
@@ -24,6 +25,7 @@ const health = useQuery({
 const activeProjects = computed(() => projects.data.value?.items.filter((p) => !p.archived) ?? []);
 const navigation = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
+  { to: '/repositories', label: 'Repositories', icon: GitFork },
   { to: '/packages', label: 'Packages', icon: Boxes },
   { to: '/projects', label: 'Projects', icon: FolderKanban },
   { to: '/annotations', label: 'Releases & campaigns', icon: Megaphone },
@@ -84,7 +86,7 @@ const navigation = [
         <span class="flex items-center gap-3"
           ><span class="text-primary">Workspace</span
           ><ChevronRight :size="12" aria-hidden="true" /><span class="muted"
-            >NuGet insights</span
+            >Package & repository insights</span
           ></span
         ><span class="flex items-center gap-2 text-[11px] text-slate-400"
           ><component
