@@ -25,9 +25,9 @@ const health = useQuery({
 const activeProjects = computed(() => projects.data.value?.items.filter((p) => !p.archived) ?? []);
 const navigation = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
+  { to: '/projects', label: 'Projects', icon: FolderKanban },
   { to: '/repositories', label: 'Repositories', icon: GitFork },
   { to: '/packages', label: 'Packages', icon: Boxes },
-  { to: '/projects', label: 'Projects', icon: FolderKanban },
   { to: '/annotations', label: 'Releases & campaigns', icon: Megaphone },
   { to: '/sync', label: 'Collection health', icon: Activity },
 ];
