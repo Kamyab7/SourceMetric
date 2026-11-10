@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  Menu,
   Activity,
   Boxes,
   GitFork,
@@ -11,11 +12,12 @@ import {
   LogOut,
   ChevronRight,
 } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { healthSchema } from '@sourcemetric/contracts';
 import { api } from '../shared/api';
 import { useProjects } from '../features/projects/queries';
+const menuOpen = ref(true);
 const projects = useProjects();
 const health = useQuery({
   queryKey: ['health'],
@@ -34,7 +36,7 @@ const navigation = [
 </script>
 <template>
   <div class="shell">
-    <aside>
+    <aside id="workspace-sidebar" :class="{ 'sidebar-collapsed': !menuOpen }" :inert="!menuOpen">
       <RouterLink to="/" class="brand" aria-label="SourceMetric home">
         <img
           src="/brand/sourcemetric-wordmark.svg"
@@ -83,12 +85,25 @@ const navigation = [
     </aside>
     <div class="main">
       <header>
-        <span class="flex items-center gap-3"
-          ><span class="text-primary">Workspace</span
-          ><ChevronRight :size="12" aria-hidden="true" /><span class="muted"
-            >Package & repository insights</span
-          ></span
-        ><span class="flex items-center gap-2 text-[11px] text-slate-400"
+        <div class="flex min-w-0 items-center gap-3">
+          <button
+            class="btn btn-ghost btn-square btn-sm shrink-0 text-primary"
+            type="button"
+            :aria-label="menuOpen ? 'Collapse navigation' : 'Expand navigation'"
+            :aria-expanded="menuOpen"
+            aria-controls="workspace-sidebar"
+            @click="menuOpen = !menuOpen"
+          >
+            <Menu :size="22" :stroke-width="1.6" aria-hidden="true" />
+          </button>
+          <span class="flex items-center gap-3"
+            ><span class="text-primary">Workspace</span
+            ><ChevronRight :size="12" aria-hidden="true" /><span class="muted"
+              >Package & repository insights</span
+            ></span
+          >
+        </div>
+        <span class="flex items-center gap-2 text-[11px] text-slate-400"
           ><component
             :is="health.data.value?.demo ? FlaskConical : ShieldCheck"
             :size="14"
