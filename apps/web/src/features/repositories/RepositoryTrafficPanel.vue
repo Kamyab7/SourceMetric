@@ -32,15 +32,11 @@ watch(
     pagination.page.value = 1;
   },
 );
-const exportQuery = computed(() => new URLSearchParams(props.range).toString());
 </script>
 <template>
   <section class="card bg-base-100 border border-base-300 panel">
     <div class="section-heading">
       <h2>Visitors, content &amp; referrals</h2>
-      <a class="btn btn-sm btn-ghost" :href="'/api/v1/repository-traffic-exports?' + exportQuery"
-        >Export traffic snapshots CSV</a
-      >
     </div>
     <p class="muted small">
       Unique visitors are per repository and snapshot. They cannot be added across days,

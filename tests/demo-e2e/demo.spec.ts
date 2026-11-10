@@ -61,7 +61,7 @@ test('real demo lists page independently and reset when dashboard filters change
   ).toContainText('1–6 of 6');
 });
 
-test('GitHub demo histories render at workspace, project and repository scope and export daily uniques', async ({
+test('GitHub demo histories render at workspace, project and repository scope', async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -76,9 +76,7 @@ test('GitHub demo histories render at workspace, project and repository scope an
   await page.getByRole('link', { name: 'nebula/platform', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'nebula/platform', exact: true })).toBeVisible();
   await page.getByLabel('Range', { exact: true }).selectOption('7');
-  const download = page.waitForEvent('download');
-  await page.getByRole('link', { name: 'Export repository CSV' }).click();
-  expect((await download).suggestedFilename()).toBe('sourcemetric-repositories.csv');
+  await expect(page.getByRole('link', { name: /Export.*CSV/ })).toHaveCount(0);
   await page.getByRole('link', { name: 'Repositories', exact: true }).click();
   await expect(page.getByRole('link', { name: 'orbit/tools', exact: true })).toBeVisible();
   await page
@@ -97,7 +95,7 @@ test('GitHub demo histories render at workspace, project and repository scope an
   expect(errors).toEqual([]);
 });
 
-test('visitor charts and rolling traffic history work at all scopes with separate CSV exports', async ({
+test('overview visitor charts and project/repository traffic history work without CSV export controls', async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -107,6 +105,10 @@ test('visitor charts and rolling traffic history work at all scopes with separat
   await expect(page.getByRole('img', { name: /GitHub views by repository/ })).toBeVisible();
   await page.getByLabel('Chart metric').selectOption('visitors');
   await expect(page.getByRole('img', { name: /GitHub visitors by repository/ })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Visitors, content & referrals', exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole('link', { name: 'Nebula Platform', exact: true }).click();
   const group = page.getByRole('article', { name: 'nebula/platform traffic', exact: true });
   const visitors = group.getByRole('region', { name: 'Visitors snapshot', exact: true });
   await expect(visitors).toContainText('Unique visitors over 14 days');
@@ -125,9 +127,7 @@ test('visitor charts and rolling traffic history work at all scopes with separat
   await expect(
     paths.getByRole('button', { name: 'Use latest snapshot at range end' }),
   ).toBeVisible();
-  const download = page.waitForEvent('download');
-  await page.getByRole('link', { name: 'Export traffic snapshots CSV' }).click();
-  expect((await download).suggestedFilename()).toBe('sourcemetric-traffic-snapshots.csv');
+  await expect(page.getByRole('link', { name: /Export.*CSV/ })).toHaveCount(0);
   await page.getByRole('link', { name: 'Nebula Platform', exact: true }).click();
   await expect(
     page.getByRole('article', { name: 'nebula/platform traffic', exact: true }),

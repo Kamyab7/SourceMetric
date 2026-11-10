@@ -22,8 +22,6 @@ const metrics = useQuery({
           class="btn btn-sm btn-ghost"
           :to="'/repositories' + (range.projectId ? '?projectId=' + range.projectId : '')"
           >Manage repositories</RouterLink
-        ><a class="btn btn-sm btn-ghost" :href="'/api/v1/repository-exports?' + query"
-          >Export repository CSV</a
         >
       </div>
     </div>
@@ -128,5 +126,5 @@ const metrics = useQuery({
       </template>
     </template>
   </section>
-  <RepositoryTrafficPanel :range="range" />
+  <RepositoryTrafficPanel v-if="range.projectId || range.repositoryId" :range="range" />
 </template>

@@ -11,7 +11,6 @@ import { useMetrics, useVersions } from './queries';
 import { number, utc } from '../../shared/api';
 import RepositoryMetricsPanel from '../repositories/RepositoryMetricsPanel.vue';
 import GrowthChart from './GrowthChart.vue';
-import ExportButton from '../exports/ExportButton.vue';
 const route = useRoute(),
   projects = useProjects();
 const projectId = computed(() => String(route.params.projectId ?? '')),
@@ -76,7 +75,6 @@ const shownPackages = computed(
       <h1>{{ title }}</h1>
       <p class="muted">A longer view of your packages. Every observation stays yours.</p>
     </div>
-    <ExportButton :range="range" />
   </div>
   <section v-if="packageId && pkg.data.value" class="card bg-base-100 border border-base-300 panel">
     <p>{{ pkg.data.value.description }}</p>
