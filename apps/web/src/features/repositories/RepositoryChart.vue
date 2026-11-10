@@ -23,11 +23,14 @@ function render() {
   );
   chart?.setOption(
     {
-      color: ['#38d9f5', '#a78bfa', '#fbbf24', '#34d399'],
+      color: ['#3ecf8e', '#93b8ec', '#e8b95b', '#c4a7e7', '#f08080', '#a7d8bf'],
       tooltip: {
         trigger: 'axis',
         renderMode: 'richText',
         confine: true,
+        backgroundColor: '#202020',
+        borderColor: '#404040',
+        textStyle: { color: '#ededed' },
         formatter: (params: unknown) =>
           (
             params as {
@@ -41,7 +44,8 @@ function render() {
             )
             .join('\n\n'),
       },
-      legend: { bottom: 0, textStyle: { color: '#91a1b8' } },
+      textStyle: { color: '#a3a3a3', fontFamily: 'Inter Variable, Inter, sans-serif' },
+      legend: { bottom: 0, textStyle: { color: '#a3a3a3' } },
       grid: { left: 65, right: 25, top: 24, bottom: 60 },
       xAxis: {
         type: 'time',
@@ -50,7 +54,7 @@ function render() {
         max: Date.parse(m.to),
         axisLabel: { formatter: (v: number) => new Date(v).toISOString().slice(5, 10) },
       },
-      yAxis: { type: 'value', splitLine: { lineStyle: { color: '#203047' } } },
+      yAxis: { type: 'value', splitLine: { lineStyle: { color: '#333333' } } },
       series: m.repositories.map((r) => {
         const data = [];
         if (daily) {

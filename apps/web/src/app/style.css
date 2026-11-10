@@ -6,26 +6,26 @@
   name: 'sourcemetric';
   default: true;
   color-scheme: dark;
-  --color-base-100: #111b2c;
-  --color-base-200: #0c1423;
-  --color-base-300: #24334a;
-  --color-base-content: #e2ebf8;
-  --color-primary: #38d9f5;
-  --color-primary-content: #07131d;
-  --color-secondary: #a78bfa;
-  --color-secondary-content: #110d24;
-  --color-accent: #34d399;
-  --color-accent-content: #061b16;
-  --color-neutral: #1a2840;
-  --color-neutral-content: #cbd9ec;
-  --color-info: #60a5fa;
-  --color-info-content: #091629;
-  --color-success: #34d399;
-  --color-success-content: #062019;
-  --color-warning: #fbbf24;
+  --color-base-100: #1c1c1c;
+  --color-base-200: #171717;
+  --color-base-300: #333333;
+  --color-base-content: #ededed;
+  --color-primary: #3ecf8e;
+  --color-primary-content: #0b2117;
+  --color-secondary: #a7d8bf;
+  --color-secondary-content: #14251c;
+  --color-accent: #3ecf8e;
+  --color-accent-content: #0b2117;
+  --color-neutral: #252525;
+  --color-neutral-content: #d4d4d4;
+  --color-info: #93b8ec;
+  --color-info-content: #111b29;
+  --color-success: #3ecf8e;
+  --color-success-content: #0b2117;
+  --color-warning: #e8b95b;
   --color-warning-content: #261d04;
-  --color-error: #fb7185;
-  --color-error-content: #2c0910;
+  --color-error: #f08080;
+  --color-error-content: #2c1111;
   --radius-selector: 0.5rem;
   --radius-field: 0.5rem;
   --radius-box: 0.85rem;
@@ -36,6 +36,10 @@
   --noise: 0;
 }
 @theme {
+  --color-slate-100: #ededed;
+  --color-slate-300: #d4d4d4;
+  --color-slate-400: #a3a3a3;
+  --color-slate-500: #8a8a8a;
   --font-sans: 'Inter Variable', 'Inter', sans-serif;
 }
 @layer base {
@@ -75,7 +79,7 @@
     @apply flex min-h-screen;
   }
   aside {
-    @apply w-64 shrink-0 bg-[#090f1c] border-r border-base-300/70 px-5 py-8 flex flex-col sticky top-0 h-screen;
+    @apply w-64 shrink-0 bg-[#141414] border-r border-base-300/70 px-5 py-8 flex flex-col sticky top-0 h-screen;
   }
   .brand {
     @apply flex items-center gap-3 text-xl font-semibold tracking-tight;
@@ -269,7 +273,7 @@
   }
 }
 body {
-  background-image: radial-gradient(ellipse at 70% 0%, #17284b66, transparent 60%);
+  background-image: radial-gradient(ellipse at 70% 0%, #2247351a, transparent 60%);
   background-attachment: fixed;
 }
 @media (max-width: 1000px) {
@@ -353,7 +357,7 @@ body {
   }
 }
 
-/* Override daisyUI's base-content focus color without changing resting fields. */
+/* Use the brand green for field focus without changing resting fields. */
 @layer utilities {
   :is(.input, .select, .textarea):is(:focus, :focus-within, :focus-visible) {
     --input-color: color-mix(in oklab, var(--color-primary) 65%, transparent);
@@ -406,4 +410,10 @@ body {
     padding-block: 0;
     border-width: 0;
   }
+}
+
+/* Blend the generated logo’s charcoal canvas into the app’s dark surfaces. */
+.brand img,
+footer img {
+  mix-blend-mode: lighten;
 }

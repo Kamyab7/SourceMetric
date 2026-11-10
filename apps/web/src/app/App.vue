@@ -39,7 +39,7 @@ const navigation = [
     <aside id="workspace-sidebar" :class="{ 'sidebar-collapsed': !menuOpen }" :inert="!menuOpen">
       <RouterLink to="/" class="brand" aria-label="SourceMetric home">
         <img
-          src="/brand/sourcemetric-wordmark.svg"
+          src="/brand/sourcemetric-wordmark-v2.svg"
           alt="SourceMetric"
           width="200"
           height="41"
@@ -126,7 +126,7 @@ const navigation = [
       <footer>
         <span class="flex items-center gap-2"
           ><img
-            src="/brand/sourcemetric-mark.svg"
+            src="/brand/sourcemetric-mark-v2.svg"
             alt=""
             width="18"
             height="18"

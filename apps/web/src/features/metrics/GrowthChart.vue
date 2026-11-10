@@ -27,14 +27,14 @@ function render() {
   const ids = [...new Set(props.metrics.points.map((p) => p.packageId))];
   chart.setOption(
     {
-      color: ['#38d9f5', '#a78bfa', '#fbbf24', '#34d399'],
+      color: ['#3ecf8e', '#93b8ec', '#e8b95b', '#c4a7e7', '#f08080', '#a7d8bf'],
       tooltip: {
         trigger: 'axis',
         confine: true,
         renderMode: 'richText',
-        backgroundColor: '#131e31',
-        borderColor: '#304360',
-        textStyle: { color: '#e1ecfa' },
+        backgroundColor: '#202020',
+        borderColor: '#404040',
+        textStyle: { color: '#ededed' },
         formatter: (params: unknown) => {
           const rows = params as {
             seriesName: string;
@@ -52,24 +52,24 @@ function render() {
             .join('\n\n');
         },
       },
-      textStyle: { fontFamily: 'Inter Variable, Inter, sans-serif', color: '#91a1b8' },
-      legend: { bottom: 0, textStyle: { color: '#91a1b8' } },
+      textStyle: { fontFamily: 'Inter Variable, Inter, sans-serif', color: '#a3a3a3' },
+      legend: { bottom: 0, textStyle: { color: '#a3a3a3' } },
       grid: { left: 65, right: 25, top: 24, bottom: 60 },
       xAxis: {
         type: 'time',
         min: Date.parse(props.metrics.from),
         max: Date.parse(props.metrics.to),
         axisLabel: {
-          color: '#91a1b8',
+          color: '#a3a3a3',
           formatter: (v: number) => new Date(v).toISOString().slice(5, 10),
         },
       },
       yAxis: {
         type: 'value',
         name: 'Observed downloads',
-        nameTextStyle: { color: '#91a1b8' },
-        axisLabel: { color: '#91a1b8' },
-        splitLine: { lineStyle: { color: '#203047' } },
+        nameTextStyle: { color: '#a3a3a3' },
+        axisLabel: { color: '#a3a3a3' },
+        splitLine: { lineStyle: { color: '#333333' } },
       },
       series: ids.map((id, index) => ({
         name: props.packages.find((p) => p.id === id)?.displayName ?? id,
@@ -88,7 +88,7 @@ function render() {
             ? {
                 symbol: 'none',
                 silent: true,
-                lineStyle: { color: '#a78bfa', type: 'dashed' },
+                lineStyle: { color: '#a7d8bf', type: 'dashed' },
                 data: [
                   ...new Map(props.metrics.annotations.map((n) => [n.occurredAt, n])).values(),
                 ].map((n) => ({
