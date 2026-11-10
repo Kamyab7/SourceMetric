@@ -68,3 +68,20 @@ New `/api/v1` resources:
 | `/repository-sync`, `/repository-sync/:id/refresh`            | GET attempts and schedules, POST queue with five-minute cooldown                                                  |
 
 Repository sync accepts `limit`/`offset` for attempts and `repositoryLimit`/`repositoryOffset` for schedules. Repository list selectors fetch every page. Package APIs and provider contracts remain compatible. Demo mode blocks all mutations before adapters run and bypasses both scheduled collectors.
+
+### Visitor traffic and rolling snapshots
+
+The GitHub adapter collects clones, daily views, popular paths, and referrers sequentially within each repository runner. Each endpoint returns an independent result. Rate limiting defers remaining endpoints and suppresses further requests through that adapter instance for the remainder of the retry window. Successful endpoints commit even when others fail. Overall attempts/jobs report partial failures; legacy `trafficSuccess`/`trafficError` remain clone-specific.
+
+Migration `0003_repository_traffic.sql` adds daily view buckets, rolling traffic snapshots, and per-endpoint status. JSON arrays preserve source top-10 rankings, including successful empty lists. Snapshots are unique by repository/metric/collection timestamp. All new writes share the collection's atomic batch and lease fences. Repository deletion cascades to every new table. The migration initializes clone endpoint status from existing records without inventing historical view or ranking data.
+
+`GET /repository-metrics` adds `views` (total, completeness, comparison) and `viewDays` (per-repository daily counts and unique visitors). Existing fields retain their meanings. `GET /repository-sync` adds `trafficStatuses` for the displayed repository schedule page.
+
+| Resource under `/api/v1`            | Behavior                                                                                                                                                                                                                                        |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/repository-traffic`               | Existing repository range/scope filters and limit/offset; paginates repository groups, with the latest successful summary per metric at/before `to`, plus current endpoint health. No historical item arrays are loaded.                        |
+| `/repository-traffic/history`       | Required repositoryId, metric (`views`, `paths`, `referrers`), from/to and pagination; lists summary history newest first at/before `to`, including snapshots earlier than `from` for inspecting stale history.                                 |
+| `/repository-traffic/snapshots/:id` | One saved snapshot with its source items and ranking order.                                                                                                                                                                                     |
+| `/repository-traffic-exports`       | Existing range/scope filters and optional metric; exports snapshots collected within from/to, including empty lists. Rejects more than 50,000 expanded data rows or snapshots, or an estimated payload above 8 MiB, before loading item arrays. |
+
+All routes retain existing authentication and read-only demo behavior. Lists use the existing 1–100 page limits and ranges retain the 366-day maximum. Historical ranking snapshots are never aggregated across collections or repositories.

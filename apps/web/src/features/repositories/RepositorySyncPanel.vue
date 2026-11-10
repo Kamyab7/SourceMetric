@@ -60,6 +60,7 @@ watch(
             <th>Last success</th>
             <th>Next attempt</th>
             <th>Status / error</th>
+            <th>Traffic endpoints</th>
           </tr>
         </thead>
         <tbody>
@@ -75,6 +76,16 @@ watch(
                 class="mt-1 max-w-40 break-words text-[10px] leading-relaxed text-error/80"
               >
                 {{ p.lastError }}
+              </p>
+            </td>
+            <td>
+              <p
+                v-for="s in sync.data.value?.trafficStatuses.filter((s) => s.repositoryId === p.id)"
+                :key="s.metric"
+                class="small"
+              >
+                {{ s.metric }} · {{ s.status }} · Last success {{ utc(s.lastSuccess)
+                }}<span v-if="s.error"> · {{ s.error }}</span>
               </p>
             </td>
           </tr>

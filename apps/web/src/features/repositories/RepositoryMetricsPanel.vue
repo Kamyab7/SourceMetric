@@ -3,9 +3,10 @@ import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { repositoryMetricsSchema, type RepositoryRange } from '@sourcemetric/contracts';
 import { api, number, utc } from '../../shared/api';
+import RepositoryTrafficPanel from './RepositoryTrafficPanel.vue';
 import RepositoryChart from './RepositoryChart.vue';
 const props = defineProps<{ range: RepositoryRange }>();
-const metric = ref<'stars' | 'forks' | 'clones' | 'uniques'>('stars');
+const metric = ref<'stars' | 'forks' | 'clones' | 'uniques' | 'views' | 'visitors'>('stars');
 const query = computed(() => new URLSearchParams(props.range).toString());
 const metrics = useQuery({
   queryKey: computed(() => ['repository-metrics', query.value]),
@@ -67,12 +68,26 @@ const metrics = useQuery({
               }}</span
             >
           </article>
+          <article>
+            <span class="eyebrow">Views</span
+            ><strong>{{ number(metrics.data.value.views.total) }}</strong
+            ><span class="muted small"
+              >Observed complete UTC days ·
+              {{ metrics.data.value.views.complete ? 'complete coverage' : 'partial coverage'
+              }}<br />vs. previous
+              {{
+                metrics.data.value.views.comparison === null
+                  ? 'N/A'
+                  : number(metrics.data.value.views.comparison) + '%'
+              }}</span
+            >
+          </article>
         </div>
         <p class="muted small">
           Stars and forks are snapshots; change is measured between observations inside the range.
-          Clone totals include fully contained, non-provisional daily buckets. Missing days are
-          unknown. Daily unique cloners cannot be added into a period-wide unique count. All times
-          UTC.
+          View and clone totals include fully contained, non-provisional daily buckets. Missing days
+          are unknown. Daily unique visitors and cloners cannot be added into a period-wide unique
+          count. All times UTC.
         </p>
         <label
           >Chart metric<select class="select select-bordered" v-model="metric">
@@ -80,6 +95,8 @@ const metrics = useQuery({
             <option value="forks">Forks</option>
             <option value="clones">Daily clones</option>
             <option value="uniques">Daily unique cloners</option>
+            <option value="views">Daily views</option>
+            <option value="visitors">Daily unique visitors</option>
           </select></label
         >
         <RepositoryChart :metrics="metrics.data.value" :metric="metric" />
@@ -111,4 +128,5 @@ const metrics = useQuery({
       </template>
     </template>
   </section>
+  <RepositoryTrafficPanel :range="range" />
 </template>

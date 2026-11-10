@@ -18,7 +18,7 @@ In the deployment form, keep the repository root as the project directory, use *
 ## Included
 
 - Vue 3 dashboard with a dark Tailwind CSS/daisyUI theme, self-hosted Inter, Lucide icons, and workspace, project, and package views, date filters, version channels, ECharts trends, and CSV exports.
-- GitHub repository management, project associations, clone history, star/fork net change, charts, CSV exports, and collection health. Optional deployment-level `GITHUB_TOKEN` secret; see [setup](docs/deployment.md#github-repository-metrics).
+- GitHub repository management, project associations, clone/view history, daily unique visitors, star/fork net change, historical popular-content/referrer snapshots, charts, CSV exports, and per-endpoint collection health. Optional deployment-level `GITHUB_TOKEN` secret; see [setup](docs/deployment.md#github-repository-metrics).
 - Projects with shared packages, archive/restore, and explicit permanent history deletion.
 - NuGet service discovery, exact package resolution, package/version counters, and version discovery notes.
 - Hourly Worker scheduling, six-hour per-package cadence, bounded collection, expiring D1 leases, retries, and collection status.

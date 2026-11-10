@@ -227,12 +227,28 @@ export const repositoryMetricsSchema = z.object({
   }),
   snapshots: z.array(repositorySnapshotSchema),
   days: z.array(repositoryCloneSchema),
+  viewDays: z.array(repositoryCloneSchema),
+  views: z.object({
+    total: z.number().nullable(),
+    complete: z.boolean(),
+    comparison: z.number().nullable(),
+  }),
   truncated: z.boolean(),
 });
 export type RepositoryMetrics = z.infer<typeof repositoryMetricsSchema>;
+export const trafficStatusSchema = z.object({
+  repositoryId: idSchema,
+  metric: z.enum(['clones', 'views', 'paths', 'referrers']),
+  lastAttempt: z.string(),
+  lastSuccess: z.string().nullable(),
+  status: z.enum(['success', 'failed', 'deferred', 'unknown']),
+  error: z.string().nullable(),
+});
+
 export const repositorySyncSchema = z.object({
   repositories: z.array(repositorySchema),
   repositoryTotal: z.number(),
+  trafficStatuses: z.array(trafficStatusSchema),
   attemptTotal: z.number(),
   attempts: z.array(
     z.object({
@@ -245,4 +261,37 @@ export const repositorySyncSchema = z.object({
       error: z.string().nullable(),
     }),
   ),
+});
+
+export const trafficMetricSchema = z.enum(['views', 'paths', 'referrers']);
+export type TrafficMetric = z.infer<typeof trafficMetricSchema>;
+export const trafficItemSchema = z.object({
+  identity: z.string(),
+  title: z.string().nullable(),
+  count: z.number().int().nonnegative(),
+  uniques: z.number().int().nonnegative(),
+});
+export const trafficSnapshotSchema = z.object({
+  id: idSchema,
+  repositoryId: idSchema,
+  metric: trafficMetricSchema,
+  observedAt: z.string(),
+  windowDays: z.literal(14),
+  count: z.number().nullable(),
+  uniques: z.number().nullable(),
+  itemCount: z.number().int().nonnegative(),
+});
+export const trafficDetailSchema = trafficSnapshotSchema.extend({
+  items: z.array(trafficItemSchema).max(10),
+});
+export const trafficListSchema = z.object({
+  items: z.array(
+    z.object({
+      repositoryId: idSchema,
+      repositoryName: z.string(),
+      snapshots: z.array(trafficSnapshotSchema),
+      statuses: z.array(trafficStatusSchema),
+    }),
+  ),
+  total: z.number(),
 });

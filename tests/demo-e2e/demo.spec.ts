@@ -73,7 +73,7 @@ test('GitHub demo histories render at workspace, project and repository scope an
   await expect(page.getByRole('img', { name: /GitHub stars by repository/ })).toBeVisible();
   await page.getByLabel('Chart metric').selectOption('uniques');
   await expect(page.getByRole('img', { name: /GitHub uniques by repository/ })).toBeVisible();
-  await page.getByRole('link', { name: 'nebula/platform', exact: true }).click();
+  await page.getByRole('link', { name: 'nebula/platform', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'nebula/platform', exact: true })).toBeVisible();
   await page.getByLabel('Range', { exact: true }).selectOption('7');
   const download = page.waitForEvent('download');
@@ -94,5 +94,54 @@ test('GitHub demo histories render at workspace, project and repository scope an
   await expect(page.getByRole('heading', { name: 'Repository collection schedule' })).toBeVisible();
   await expect(page.getByText('GITHUB_ACCESS_DENIED', { exact: true }).first()).toBeVisible();
   await page.screenshot({ path: 'test-results/demo-repositories.png', fullPage: true });
+  expect(errors).toEqual([]);
+});
+
+test('visitor charts and rolling traffic history work at all scopes with separate CSV exports', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/');
+  await page.getByLabel('Chart metric').selectOption('views');
+  await expect(page.getByRole('img', { name: /GitHub views by repository/ })).toBeVisible();
+  await page.getByLabel('Chart metric').selectOption('visitors');
+  await expect(page.getByRole('img', { name: /GitHub visitors by repository/ })).toBeVisible();
+  const group = page.getByRole('article', { name: 'nebula/platform traffic', exact: true });
+  const visitors = group.getByRole('region', { name: 'Visitors snapshot', exact: true });
+  await expect(visitors).toContainText('Unique visitors over 14 days');
+  const paths = group.getByRole('region', { name: 'Popular content snapshot', exact: true });
+  await expect(paths.getByRole('link', { name: 'Getting started', exact: true })).toBeVisible();
+  await expect(
+    group.getByRole('region', { name: 'Referring sites snapshot', exact: true }),
+  ).toContainText('Google');
+  await paths.getByRole('button', { name: 'Snapshot history', exact: true }).click();
+  const pager = paths.getByRole('navigation', { name: 'paths snapshot history pagination' });
+  await expect(pager).toContainText('1–10 of');
+  await pager.getByRole('button', { name: 'Next paths snapshot history page' }).click();
+  await expect(pager).toContainText('11–20 of');
+  const choices = paths.getByRole('button', { name: /^20\d\d-/ });
+  await choices.first().click();
+  await expect(
+    paths.getByRole('button', { name: 'Use latest snapshot at range end' }),
+  ).toBeVisible();
+  const download = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Export traffic snapshots CSV' }).click();
+  expect((await download).suggestedFilename()).toBe('sourcemetric-traffic-snapshots.csv');
+  await page.getByRole('link', { name: 'Nebula Platform', exact: true }).click();
+  await expect(
+    page.getByRole('article', { name: 'nebula/platform traffic', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('article', { name: 'orbit/tools traffic', exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole('link', { name: 'nebula/platform', exact: true }).first().click();
+  await expect(page.getByRole('heading', { name: 'nebula/platform', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Visitors snapshot', exact: true })).toContainText(
+    'GitHub rolling 14-day snapshot',
+  );
+  await page.screenshot({ path: 'test-results/demo-visitor-traffic.png', fullPage: true });
+  await page.getByRole('link', { name: 'Collection health', exact: true }).click();
+  await expect(page.getByRole('columnheader', { name: 'Traffic endpoints' })).toBeVisible();
   expect(errors).toEqual([]);
 });

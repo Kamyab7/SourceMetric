@@ -294,6 +294,96 @@ export function createDemoFixture(now = new Date()) {
         [id, at(day * 24), 8 + n * 5 + (day % 9), 4 + n + (day % 4), last, day === 210 ? 1 : 0],
       );
     }
+
+    for (let day = 0; day <= Math.floor(slots / 4); day++) {
+      if (n === 1 && day === 208) continue;
+      row(
+        'repository_views',
+        ['repository_id', 'day', 'count', 'uniques', 'observed_at', 'provisional'],
+        [
+          id,
+          at(day * 24),
+          100 + n * 20 + (day % 17),
+          40 + n * 5 + (day % 8),
+          last,
+          day === 210 ? 1 : 0,
+        ],
+      );
+    }
+    for (let slot = Math.max(0, slots - 360); slot <= slots; slot++) {
+      ['views', 'paths', 'referrers'].forEach((metric, m) => {
+        if (n === 2 && metric === 'referrers' && slot > slots - 4) return;
+        const pathItems = [
+          {
+            identity: '/' + name + '/blob/main/README.md',
+            title: 'Getting started',
+            count: 200 + (slot % 30),
+            uniques: 80,
+          },
+          {
+            identity: '/' + name + '/tree/main/docs',
+            title: 'Documentation',
+            count: 140 + (slot % 20),
+            uniques: 65,
+          },
+        ];
+        if (slot % 2) pathItems.reverse();
+        const items =
+          metric === 'views'
+            ? []
+            : metric === 'paths'
+              ? n === 1 && slot === slots - 1
+                ? []
+                : pathItems
+              : [
+                  { identity: 'Google', title: null, count: 70 + (slot % 10), uniques: 45 },
+                  {
+                    identity: 'community.example',
+                    title: null,
+                    count: 30 + (slot % 5),
+                    uniques: 20,
+                  },
+                ];
+        row(
+          'repository_traffic_snapshots',
+          [
+            'id',
+            'repository_id',
+            'metric',
+            'observed_at',
+            'window_days',
+            'count',
+            'uniques',
+            'items',
+          ],
+          [
+            '60000000-0000-4000-8000-' + String(n * 100000 + slot * 3 + m + 1).padStart(12, '0'),
+            id,
+            metric,
+            at(slot * 6),
+            14,
+            metric === 'views' ? 1400 + n * 100 + (slot % 60) : null,
+            metric === 'views' ? 450 + n * 50 + (slot % 20) : null,
+            JSON.stringify(items),
+          ],
+        );
+      });
+    }
+    ['clones', 'views', 'paths', 'referrers'].forEach((metric) => {
+      const failed = n === 2 && (metric === 'clones' || metric === 'referrers');
+      row(
+        'repository_traffic_status',
+        ['repository_id', 'metric', 'last_attempt', 'last_success', 'status', 'error'],
+        [
+          id,
+          metric,
+          last,
+          failed ? at((slots - 4) * 6) : last,
+          failed ? 'failed' : 'success',
+          failed ? 'GITHUB_ACCESS_DENIED' : null,
+        ],
+      );
+    });
     for (let attempt = 0; attempt < 8; attempt++)
       row(
         'repository_attempts',
@@ -323,6 +413,9 @@ export function createDemoFixture(now = new Date()) {
     'repository_snapshots',
     'repository_clones',
     'repository_attempts',
+    'repository_views',
+    'repository_traffic_snapshots',
+    'repository_traffic_status',
     'packages',
     'project_packages',
     'collection_jobs',

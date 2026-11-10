@@ -137,3 +137,51 @@ export const repositoryClones = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.repositoryId, t.day] })],
 );
+
+export const repositoryViews = sqliteTable(
+  'repository_views',
+  {
+    repositoryId: text('repository_id')
+      .notNull()
+      .references(() => repositories.id, { onDelete: 'cascade' }),
+    day: text().notNull(),
+    count: integer().notNull(),
+    uniques: integer().notNull(),
+    observedAt: text('observed_at').notNull(),
+    provisional: integer({ mode: 'boolean' }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.repositoryId, t.day] })],
+);
+export const repositoryTrafficSnapshots = sqliteTable(
+  'repository_traffic_snapshots',
+  {
+    id: text().primaryKey(),
+    repositoryId: text('repository_id')
+      .notNull()
+      .references(() => repositories.id, { onDelete: 'cascade' }),
+    metric: text().notNull(),
+    observedAt: text('observed_at').notNull(),
+    windowDays: integer('window_days').notNull().default(14),
+    count: integer(),
+    uniques: integer(),
+    items: text().notNull().default('[]'),
+  },
+  (t) => [
+    uniqueIndex('traffic_snapshot_identity').on(t.repositoryId, t.metric, t.observedAt),
+    index('traffic_snapshot_history').on(t.repositoryId, t.metric, t.observedAt),
+  ],
+);
+export const repositoryTrafficStatus = sqliteTable(
+  'repository_traffic_status',
+  {
+    repositoryId: text('repository_id')
+      .notNull()
+      .references(() => repositories.id, { onDelete: 'cascade' }),
+    metric: text().notNull(),
+    lastAttempt: text('last_attempt').notNull(),
+    lastSuccess: text('last_success'),
+    status: text().notNull(),
+    error: text(),
+  },
+  (t) => [primaryKey({ columns: [t.repositoryId, t.metric] })],
+);

@@ -14,8 +14,24 @@ export interface CloneDay {
   count: number;
   uniques: number;
 }
+export type EndpointResult<T> =
+  { data: T; error: null } | { data: null; error: string; retryAfter?: number; deferred?: boolean };
+export interface TrafficItem {
+  identity: string;
+  title: string | null;
+  count: number;
+  uniques: number;
+}
+export interface ViewTraffic {
+  days: CloneDay[];
+  count: number;
+  uniques: number;
+}
 export interface RepositoryCollection {
   metadata: RepositoryMetadata;
+  views?: EndpointResult<ViewTraffic>;
+  paths?: EndpointResult<TrafficItem[]>;
+  referrers?: EndpointResult<TrafficItem[]>;
   traffic: { days: CloneDay[]; error: null } | { days: null; error: string; retryAfter?: number };
 }
 export interface RepositoryProvider {
@@ -44,6 +60,50 @@ const trafficSchema = z.object({
     )
     .max(14),
 });
+const viewSchema = trafficSchema
+  .omit({ clones: true })
+  .extend({ views: trafficSchema.shape.clones });
+const popularPathsSchema = z
+  .array(
+    z.object({
+      path: z.string().min(1).max(4096),
+      title: z.string().max(4096),
+      count: counter,
+      uniques: counter,
+    }),
+  )
+  .max(10);
+const referrersSchema = z
+  .array(z.object({ referrer: z.string().min(1).max(4096), count: counter, uniques: counter }))
+  .max(10);
+function dailyBuckets(rows: { timestamp: string; count: number; uniques: number }[]): CloneDay[] {
+  const days = rows.map((d) => ({
+    day: new Date(d.timestamp).toISOString(),
+    count: d.count,
+    uniques: d.uniques,
+  }));
+  if (
+    new Set(days.map((d) => d.day)).size !== days.length ||
+    days.some(
+      (d) =>
+        !d.day.endsWith('T00:00:00.000Z') || d.uniques > d.count || Date.parse(d.day) > Date.now(),
+    )
+  )
+    throw new AppError(502, 'GITHUB_RESPONSE_INVALID', 'GitHub returned invalid traffic dates.');
+  return days;
+}
+function popularItems(items: TrafficItem[]) {
+  if (
+    new Set(items.map((i) => i.identity)).size !== items.length ||
+    items.some((i) => i.uniques > i.count)
+  )
+    throw new AppError(
+      502,
+      'GITHUB_RESPONSE_INVALID',
+      'GitHub returned invalid popular traffic data.',
+    );
+  return items;
+}
 export function repositoryName(input: string) {
   const name = input
     .replace(/^https:\/\/github\.com\//i, '')
@@ -58,6 +118,7 @@ export function repositoryName(input: string) {
   return name;
 }
 export class GitHubProvider implements RepositoryProvider {
+  private rateLimitUntil = 0;
   constructor(
     private token?: string,
     private fetcher: typeof fetch = globalThis.fetch.bind(globalThis),
@@ -65,6 +126,13 @@ export class GitHubProvider implements RepositoryProvider {
   private async request(path: string): Promise<unknown> {
     if (!this.token)
       throw new AppError(503, 'GITHUB_NOT_CONFIGURED', 'Configure the GITHUB_TOKEN Worker secret.');
+    if (Date.now() < this.rateLimitUntil)
+      throw new AppError(
+        429,
+        'GITHUB_RATE_LIMITED',
+        'GitHub rate limit reached; collection will retry.',
+        this.rateLimitUntil - Date.now(),
+      );
     try {
       // Do not follow redirects with a credential. Collection uses immutable IDs, resolution retries a validated GitHub path.
       let url = 'https://api.github.com' + path;
@@ -109,13 +177,15 @@ export class GitHubProvider implements RepositoryProvider {
             (response.status === 403 &&
               (response.headers.get('x-ratelimit-remaining') === '0' || !!retry));
           await response.body?.cancel();
-          if (limited)
+          if (limited) {
+            this.rateLimitUntil = Date.now() + Math.max(60000, retryMs || 0, reset || 0);
             throw new AppError(
               429,
               'GITHUB_RATE_LIMITED',
               'GitHub rate limit reached; collection will retry.',
               Math.max(60000, retryMs || 0, reset || 0),
             );
+          }
           if ([401, 403, 404].includes(response.status))
             throw new AppError(
               502,
@@ -177,37 +247,61 @@ export class GitHubProvider implements RepositoryProvider {
     if (!/^\d+$/.test(githubId))
       throw new AppError(400, 'INVALID_INPUT', 'Invalid GitHub identity.');
     const metadata = await this.metadata('/repositories/' + githubId);
-    try {
-      const result = trafficSchema.safeParse(
-        await this.request('/repos/' + metadata.fullName + '/traffic/clones?per=day'),
-      );
-      if (!result.success)
-        throw new AppError(502, 'GITHUB_RESPONSE_INVALID', 'GitHub returned invalid clone data.');
-      const days = result.data.clones.map((d) => ({
-        day: new Date(d.timestamp).toISOString(),
-        count: d.count,
-        uniques: d.uniques,
-      }));
-      if (
-        new Set(days.map((d) => d.day)).size !== days.length ||
-        days.some(
-          (d) =>
-            !d.day.endsWith('T00:00:00.000Z') ||
-            d.uniques > d.count ||
-            Date.parse(d.day) > Date.now(),
-        )
-      )
-        throw new AppError(502, 'GITHUB_RESPONSE_INVALID', 'GitHub returned invalid clone dates.');
-      return { metadata, traffic: { days, error: null } };
-    } catch (error) {
-      return {
-        metadata,
-        traffic: {
-          days: null,
-          error: error instanceof AppError ? error.code : 'GITHUB_UNAVAILABLE',
-          retryAfter: error instanceof AppError ? error.retryAfter : undefined,
-        },
-      };
-    }
+    let limited: { retryAfter?: number } | undefined;
+    const endpoint = async <T>(
+      path: string,
+      validate: (data: unknown) => T,
+    ): Promise<EndpointResult<T>> => {
+      if (limited)
+        return {
+          data: null,
+          error: 'GITHUB_RATE_LIMITED',
+          retryAfter: limited.retryAfter,
+          deferred: true,
+        };
+      try {
+        return {
+          data: validate(await this.request('/repos/' + metadata.fullName + path)),
+          error: null,
+        };
+      } catch (error) {
+        const code = error instanceof AppError ? error.code : 'GITHUB_RESPONSE_INVALID';
+        const retryAfter = error instanceof AppError ? error.retryAfter : undefined;
+        if (code === 'GITHUB_RATE_LIMITED') limited = { retryAfter };
+        return { data: null, error: code, retryAfter };
+      }
+    };
+    const clones = await endpoint('/traffic/clones?per=day', (data) =>
+      dailyBuckets(trafficSchema.parse(data).clones),
+    );
+    const views = await endpoint('/traffic/views?per=day', (data) => {
+      const v = viewSchema.parse(data);
+      if (v.uniques > v.count) throw new Error();
+      return { count: v.count, uniques: v.uniques, days: dailyBuckets(v.views) };
+    });
+    const paths = await endpoint('/traffic/popular/paths', (data) =>
+      popularItems(
+        popularPathsSchema
+          .parse(data)
+          .map((d) => ({ identity: d.path, title: d.title, count: d.count, uniques: d.uniques })),
+      ),
+    );
+    const referrers = await endpoint('/traffic/popular/referrers', (data) =>
+      popularItems(
+        referrersSchema
+          .parse(data)
+          .map((d) => ({ identity: d.referrer, title: null, count: d.count, uniques: d.uniques })),
+      ),
+    );
+    return {
+      metadata,
+      traffic:
+        clones.data !== null
+          ? { days: clones.data, error: null }
+          : { days: null, error: clones.error, retryAfter: clones.retryAfter },
+      views,
+      paths,
+      referrers,
+    };
   }
 }

@@ -77,7 +77,7 @@ export async function repositoryMetrics(
       .all<Record<string, unknown>>()
   ).results.map(mapRepository);
   const scope = `SELECT r.id FROM repositories r${where}`;
-  const [snapshotRows, cloneRows] = await Promise.all([
+  const [snapshotRows, cloneRows, viewRows] = await Promise.all([
     db
       .prepare(
         `SELECT s.repository_id repositoryId,s.observed_at observedAt,s.stars,s.forks FROM repository_snapshots s
@@ -93,12 +93,35 @@ export async function repositoryMetrics(
       )
       .bind(...params, previousFrom.slice(0, 10) + 'T00:00:00.000Z', range.to, LIMIT + 1)
       .all<Omit<Clone, 'provisional'> & { provisional: number }>(),
+    db
+      .prepare(
+        `SELECT repository_id repositoryId,day,count,uniques,observed_at observedAt,provisional FROM repository_views
+      WHERE repository_id IN (${scope}) AND day>=? AND day<? ORDER BY repository_id,day LIMIT ?`,
+      )
+      .bind(...params, previousFrom.slice(0, 10) + 'T00:00:00.000Z', range.to, LIMIT + 1)
+      .all<Omit<Clone, 'provisional'> & { provisional: number }>(),
   ]);
-  const truncated = snapshotRows.results.length + cloneRows.results.length > LIMIT;
+  const truncated =
+    snapshotRows.results.length + cloneRows.results.length + viewRows.results.length > LIMIT;
   const snapshots = snapshotRows.results.slice(0, LIMIT);
   const days = cloneRows.results
     .slice(0, Math.max(0, LIMIT - snapshots.length))
     .map((d) => ({ ...d, provisional: !!d.provisional }));
+  const viewDays = viewRows.results
+    .slice(0, Math.max(0, LIMIT - snapshots.length - days.length))
+    .map((d) => ({ ...d, provisional: !!d.provisional }));
+  const views = cloneSummary(
+      repos.map((r) => r.id),
+      viewDays,
+      range.from,
+      range.to,
+    ),
+    previousViews = cloneSummary(
+      repos.map((r) => r.id),
+      viewDays,
+      previousFrom,
+      range.from,
+    );
   const ids = repos.map((r) => r.id);
   const gauge = (metric: 'stars' | 'forks') => {
     const current = gaugeSummary(ids, snapshots, range.from, range.to, metric),
@@ -137,6 +160,16 @@ export async function repositoryMetrics(
         clones.complete && previous.complete && !truncated,
       ),
     },
+    views: {
+      ...views,
+      complete: views.complete && !truncated,
+      comparison: percent(
+        views.total,
+        previousViews.total,
+        views.complete && previousViews.complete && !truncated,
+      ),
+    },
+    viewDays: viewDays.filter((d) => Date.parse(d.day) + DAY > Date.parse(range.from)),
     snapshots: displayed,
     days: days.filter((d) => Date.parse(d.day) + DAY > Date.parse(range.from)),
     truncated,

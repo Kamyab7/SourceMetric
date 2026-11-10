@@ -17,6 +17,10 @@ import {
   repositoryExportRoutes,
 } from '../features/repositories/routes';
 import { collectRepositories } from '../features/repositories/collector';
+import {
+  repositoryTrafficRoutes,
+  repositoryTrafficExportRoutes,
+} from '../features/repositories/traffic';
 export const app = new Hono<AppBindings>();
 app.onError((error, c) => {
   if (error instanceof AppError)
@@ -36,6 +40,8 @@ app.use(
       c.json({ error: { code: 'INVALID_INPUT', message: 'Request body is too large.' } }, 413),
   }),
 );
+app.route('/api/v1/repository-traffic', repositoryTrafficRoutes);
+app.route('/api/v1/repository-traffic-exports', repositoryTrafficExportRoutes);
 app.route('/api/v1/repositories', repositoryRoutes);
 app.route('/api/v1/repository-sync', repositorySyncRoutes);
 app.route('/api/v1/repository-metrics', repositoryMetricRoutes);

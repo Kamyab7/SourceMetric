@@ -11,6 +11,7 @@ import { AppError, notFound } from '../../platform/errors';
 import { GitHubProvider } from '../../providers/github/provider';
 import { getRepository, listRepositories, registerRepository } from './repository';
 import { repositoryMetrics } from './metrics';
+import { trafficStatuses } from './traffic';
 import { csvRow } from '../exports/csv';
 export const repositoryRoutes = new Hono<AppBindings>()
   .get('/', async (c) => {
@@ -95,6 +96,10 @@ export const repositorySyncRoutes = new Hono<AppBindings>()
     return c.json({
       repositories: repositories.items,
       repositoryTotal: repositories.total,
+      trafficStatuses: await trafficStatuses(
+        c.env.DB,
+        repositories.items.map((r) => r.id),
+      ),
       attempts: attempts.results,
       attemptTotal: count?.n ?? 0,
     });
@@ -171,6 +176,21 @@ export const repositoryExportRoutes = new Hono<AppBindings>().get('/', async (c)
           d.day,
           new Date(Date.parse(d.day) + 86400000).toISOString(),
           metric === 'clones' ? d.count : d.uniques,
+          d.provisional ? 'provisional' : 'daily',
+        ]),
+      );
+  for (const d of data.viewDays)
+    for (const metric of ['views', 'daily_unique_visitors'] as const)
+      rows.push(
+        csvRow([
+          d.repositoryId,
+          names.get(d.repositoryId),
+          metric,
+          'github',
+          d.observedAt,
+          d.day,
+          new Date(Date.parse(d.day) + 86400000).toISOString(),
+          metric === 'views' ? d.count : d.uniques,
           d.provisional ? 'provisional' : 'daily',
         ]),
       );

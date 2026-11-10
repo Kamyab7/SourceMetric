@@ -8,14 +8,19 @@ import type { RepositoryMetrics } from '@sourcemetric/contracts';
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
 const props = defineProps<{
   metrics: RepositoryMetrics;
-  metric: 'stars' | 'forks' | 'clones' | 'uniques';
+  metric: 'stars' | 'forks' | 'clones' | 'uniques' | 'views' | 'visitors';
 }>();
 const element = ref<HTMLDivElement>();
 let chart: ECharts | undefined, observer: ResizeObserver | undefined;
 function render() {
   const m = props.metrics,
-    daily = props.metric === 'clones' || props.metric === 'uniques';
-  const dailyRows = new Map(m.days.map((d) => [d.repositoryId + '|' + d.day, d]));
+    daily = ['clones', 'uniques', 'views', 'visitors'].includes(props.metric);
+  const dailyRows = new Map(
+    (['views', 'visitors'].includes(props.metric) ? m.viewDays : m.days).map((d) => [
+      d.repositoryId + '|' + d.day,
+      d,
+    ]),
+  );
   chart?.setOption(
     {
       color: ['#38d9f5', '#a78bfa', '#fbbf24', '#34d399'],
@@ -57,7 +62,10 @@ function render() {
             const day = new Date(t).toISOString(),
               d = dailyRows.get(r.id + '|' + day);
             data.push({
-              value: [t, d ? (props.metric === 'clones' ? d.count : d.uniques) : null],
+              value: [
+                t,
+                d ? (['clones', 'views'].includes(props.metric) ? d.count : d.uniques) : null,
+              ],
               name:
                 day +
                 (d

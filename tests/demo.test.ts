@@ -11,6 +11,8 @@ it('seeds realistic data with complete default trends, versions, notes, and coll
   expect(fixture.counts.packages).toBe(6);
   expect(fixture.counts.repositories).toBe(3);
   expect(fixture.counts.repository_snapshots).toBeGreaterThan(2000);
+  expect(fixture.counts.repository_views).toBeGreaterThan(600);
+  expect(fixture.counts.repository_traffic_snapshots).toBeGreaterThan(3000);
   expect(fixture.counts.observations).toBeGreaterThan(10000);
   const statements = fixture.sql.split('\n').filter(Boolean);
   for (let i = 0; i < statements.length; i += 30)
@@ -49,6 +51,7 @@ it('seeds realistic data with complete default trends, versions, notes, and coll
   expect(repositories.status).toBe(200);
   expect(await repositories.json()).toMatchObject({
     stars: { latest: expect.any(Number) },
+    views: { total: expect.any(Number), complete: false },
     repositories: expect.any(Array),
     clones: { total: expect.any(Number), complete: false },
   });

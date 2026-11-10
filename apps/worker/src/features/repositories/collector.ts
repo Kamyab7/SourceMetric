@@ -4,6 +4,7 @@ import {
   type RepositoryCollection,
 } from '../../providers/github/provider';
 import { AppError } from '../../platform/errors';
+import { trafficOutcome, trafficStatements } from './traffic-persistence';
 export interface RepositoryJob {
   repository_id: string;
   github_id: string;
@@ -51,7 +52,9 @@ export async function commitRepository(
     );
   const guard = 'EXISTS(SELECT 1 FROM repository_jobs WHERE repository_id=? AND lease_token=?)';
   const trafficError = result.traffic.error;
+  const overallError = trafficOutcome(result).error;
   await db.batch([
+    ...trafficStatements(db, id, token, iso, result),
     db
       .prepare(
         `INSERT INTO repository_snapshots(repository_id,observed_at,stars,forks) SELECT ?,?,?,? WHERE ${guard} ON CONFLICT DO NOTHING`,
@@ -94,15 +97,15 @@ export async function commitRepository(
       .prepare(
         `UPDATE repository_attempts SET status=?,finished_at=?,error=? WHERE id=? AND ${guard}`,
       )
-      .bind(trafficError ? 'partial' : 'success', iso, trafficError, token, id, token),
+      .bind(overallError ? 'partial' : 'success', iso, overallError, token, id, token),
     db
       .prepare(
         `UPDATE repository_jobs SET lease_token=NULL,lease_until=NULL,failures=?,last_error=?,status=?,next_attempt=? WHERE repository_id=? AND lease_token=?`,
       )
       .bind(
-        trafficError ? job.failures + 1 : 0,
-        trafficError,
-        trafficError ? 'partial' : 'success',
+        overallError ? job.failures + 1 : 0,
+        overallError,
+        overallError ? 'partial' : 'success',
         next,
         id,
         token,
@@ -118,6 +121,13 @@ export async function failRepository(
   code: string,
 ) {
   await db.batch([
+    db
+      .prepare(
+        `INSERT INTO repository_traffic_status(repository_id,metric,last_attempt,status,error)
+      SELECT ?,value,?,'deferred',? FROM json_each('["clones","views","paths","referrers"]') WHERE EXISTS(SELECT 1 FROM repository_jobs WHERE repository_id=? AND lease_token=?)
+      ON CONFLICT(repository_id,metric) DO UPDATE SET last_attempt=excluded.last_attempt,status=excluded.status,error=excluded.error`,
+      )
+      .bind(id, iso, code, id, token),
     db
       .prepare(
         `UPDATE repository_attempts SET status='failed',finished_at=?,error=? WHERE id=? AND EXISTS(SELECT 1 FROM repository_jobs WHERE repository_id=? AND lease_token=?)`,
@@ -160,15 +170,14 @@ export async function collectRepositories(
       if (!(await claimRepository(db, job.repository_id, token, iso))) continue;
       try {
         const result = await provider.collect(job.github_id);
-        const retry = result.traffic.days === null ? result.traffic.retryAfter : 0;
+        const outcome = trafficOutcome(result);
+        const retry = outcome.retryAfter;
         const next = new Date(
           now.getTime() +
-            (result.traffic.error
-              ? Math.max(6 * 3600000, delay(job.failures, retry))
-              : 6 * 3600000),
+            (outcome.error ? Math.max(6 * 3600000, delay(job.failures, retry)) : 6 * 3600000),
         ).toISOString();
         await commitRepository(db, job, token, iso, next, result);
-        if (result.traffic.error) partial++;
+        if (outcome.error) partial++;
         else successes++;
       } catch (error) {
         const code = error instanceof AppError ? error.code : 'COLLECTION_FAILED';

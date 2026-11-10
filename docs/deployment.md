@@ -80,3 +80,11 @@ Open **Repositories**, resolve an `owner/repo` name or HTTPS github.com URL, the
 Missing configuration, token access failures, rate limits, and partial traffic failures appear in Collection health. A metadata success with a traffic failure retains stars/forks and records a partial attempt. Repository HTTP responses never include the token or upstream error bodies.
 
 Repository collection adds up to four jobs to each scheduled run in addition to the four package jobs. Validate combined CPU, subrequests, D1 statements, storage growth, and latency on staging using 20 packages and 20 repositories across at least two six-hour cycles. This change does not establish free-tier suitability; reduce the workload or upgrade if measured usage exceeds your plan. No live-account benchmark has been performed.
+
+### Enable visitor and referral metrics
+
+The existing GitHub token's **Administration: read** permission covers views, popular content, and referring sites; no additional secret or scope is required. Apply the additive D1 migrations through the normal deployment command. Collection will populate the new endpoints on the next due run; use Refresh to queue a repository earlier. Existing clone and star/fork history remains available, while new metrics have no fabricated pre-upgrade history beyond GitHub's available rolling window.
+
+Collection health now shows last success and errors separately for clones, views, paths, and referrers. An overall partial attempt can contain successful metrics alongside failed/deferred endpoints. Old clone-specific status fields remain compatible. Historical snapshots are retained indefinitely and are removed only by confirmed repository-history deletion.
+
+Before increasing a real deployment's workload, measure scheduled CPU, wall time, outgoing requests, D1 reads/writes/statements, and database growth across at least two six-hour cycles using representative packages and repositories. The three extra traffic endpoints and retained ranking snapshots add cost; production capacity remains unverified.
