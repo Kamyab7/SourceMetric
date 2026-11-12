@@ -9,11 +9,18 @@ A private, self-hosted growth dashboard for open-source maintainers. Track liste
 
 ## Deploy to Cloudflare
 
-Use the button above to copy this repository into your GitHub/GitLab account and provision the Worker and D1 database. The Worker includes the Vue assets and hourly collection schedule; the deploy command applies database migrations using the DB binding.
+Use Wrangler and the TypeScript setup script to create and configure D1, Cloudflare Access, email one-time PIN login, and a protected `workers.dev` URL. No custom domain is required.
 
-In the deployment form, keep the repository root as the project directory, use **pnpm run build** for the build command and **pnpm run deploy** for the deploy command. Cloudflare installs dependencies using the committed pnpm lockfile.
+```bash
+pnpm install --frozen-lockfile
+cp .env.example .env
+# Edit .env with your account ID, API token, and allowed email addresses.
+pnpm deploy
+```
 
-**Finish the [custom domain and Cloudflare Access setup](docs/deployment.md#deploy-button)** before using the dashboard. The button does not create Access applications, access policies, or DNS/custom domains. Until authentication is configured, the Worker rejects requests; workers.dev and preview URLs remain disabled.
+The script builds the frontend, provisions services, applies migrations, and deploys the Worker, assets, hourly schedule, and observability configuration. Rerun the same command for updates. The setup script loads the root `.env` file automatically; existing shell or CI variables take precedence. `.env` is ignored by Git. See [deployment setup and permissions](docs/deployment.md#automated-wrangler-setup).
+
+The deploy button remains an alternative for custom-domain deployments; use `pnpm run deploy:manual` as its deploy command and finish the [manual Access setup](docs/deployment.md#deploy-button).
 
 ## Included
 
@@ -78,7 +85,7 @@ Pull requests targeting master run the [CI workflow](.github/workflows/ci.yml): 
 - [Feature architecture, API, and provider extension](docs/architecture.md)
 - [Measurement semantics and capacity](docs/metrics-and-capacity.md)
 
-D1 is automatically provisioned by the deploy button, or can be created manually. Configure your custom domain and Access application to enable the deployed dashboard. Production intentionally refuses requests until Access settings are supplied.
+The automated setup provisions D1 and Access for the workers.dev hostname. Production continues to verify Access JWTs and mutation origins.
 
 Free-tier operation is a target, **not verified on a deployed account**. Indefinite version history consumes storage; single-database limits matter.
 

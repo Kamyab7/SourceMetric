@@ -1,12 +1,44 @@
 # Deployment and operations
 
+## Automated Wrangler setup
+
+`pnpm deploy` runs `scripts/setup-cloudflare.ts` using the project-local `tsx` runner (Node 22.12+). Wrangler handles bundling, assets, D1 migrations, secrets, Cron Triggers, and deployment. The script uses the Cloudflare REST API for provisioning and Access configuration.
+
+Required environment variables:
+
+| Variable                | Value                                              |
+| ----------------------- | -------------------------------------------------- |
+| `CLOUDFLARE_ACCOUNT_ID` | Target Cloudflare account ID                       |
+| `CLOUDFLARE_API_TOKEN`  | API token scoped to that account                   |
+| `ACCESS_ALLOWED_EMAILS` | Comma-separated email addresses allowed to sign in |
+
+Optional variables:
+
+| Variable            | Default / behavior                                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `WORKER_NAME`       | `sourcemetric`; also used for the D1 database name                                                                         |
+| `WORKERS_SUBDOMAIN` | Reuses the account's existing subdomain; required to register one on a fresh account. Never renames an existing subdomain. |
+| `GITHUB_TOKEN`      | If supplied, uploads the optional repository-metrics secret through stdin; otherwise leaves any existing secret unchanged  |
+
+Create an account-scoped API token with **Workers Scripts: Edit**, **Workers Tail: Read** (deployment observability), **D1: Edit**, **Access: Apps and Policies: Edit**, and **Access: Organizations, Identity Providers, and Groups: Edit** permissions. No DNS or zone permission is needed. Copy `.env.example` to `.env` in the repository root and fill in the values, or use a protected CI environment. The script loads `.env` automatically without overriding existing shell or CI variables. A missing `.env` is allowed. `.env` is ignored by Git, and the script does not print tokens. You must already have a Cloudflare account and any required account/Zero Trust plan onboarding completed; it does not purchase subscriptions.
+
+Run the commands in the README. The script reuses or registers the account workers.dev subdomain, reuses or creates a Zero Trust organization, and reuses or creates an email one-time PIN identity provider. It creates an Access application for the entire Worker hostname and reconciles its explicit email allowlist on each run. Other applications and organization settings are preserved. It refuses to overwrite an existing application without its setup naming marker or to proceed with unexpected policies. Use the same account and Worker name on subsequent deployments; changing the name provisions another deployment.
+
+The generated `.wrangler/deploy/wrangler.json` includes the actual account, database ID, Access audience, team domain, and exact HTTPS origin. It is ignored by Git and does not contain credentials. The checked-in Wrangler config remains the local-development/manual-deployment template. No custom domain or DNS record is created. Preview URLs remain disabled, production mode stays enabled, and all asset requests pass through Worker authentication.
+
+Migrations run before deployment; failures stop the script. Provisioning is incremental, so failures can leave created resources; rerun after correcting the error. The script does not automatically delete databases or undo applied migrations. Do not run setup concurrently against the same Worker. Back up an existing D1 database before schema upgrades.
+
+After deployment, open the printed URL in a private browser window, confirm Access requires login, and verify an allowed email can sign in with a PIN. Confirm another email is denied, dashboard deep links work, and a package baseline appears after an hourly collection. Local checks cannot verify live account permissions, Access propagation, email delivery, or scheduled execution.
+
+References: [Workers Access](https://developers.cloudflare.com/workers/configuration/cloudflare-access/), [Zero Trust organization API](https://developers.cloudflare.com/api/typescript/resources/zero_trust/subresources/organizations/methods/create/), [email one-time PIN](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/one-time-pin/).
+
 ## Deploy button
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https%3A%2F%2Fgithub.com%2FKamyab7%2FSourceMetric)
 
 1. Open the button and choose your Cloudflare account and destination GitHub/GitLab repository.
 2. Keep the project directory at the repository root: this is a pnpm workspace, and the root Wrangler configuration references the Vue and Worker folders.
-3. Accept or set build command **pnpm run build** and deploy command **pnpm run deploy**. Dependency installation uses pnpm and the committed lockfile.
+3. Accept or set build command **pnpm run build** and deploy command **pnpm run deploy:manual**. Dependency installation uses pnpm and the committed lockfile.
 4. Confirm the D1 resource. Cloudflare provisions the database and updates the top-level binding with its ID. The deploy script applies pending migrations through the binding name DB, so customized database names work.
 5. Set ACCESS_TEAM_DOMAIN, ACCESS_AUD, and APP_ORIGIN if your Access application/domain already exist. Keep APP_ENV=production and DEMO_MODE=false.
 6. If Access is not configured yet, complete steps 4–6 of the manual instructions below in your copied repository: add a custom domain and create an Access application with an explicit allow policy. Commit the updated production configuration and let Workers Builds redeploy.
@@ -32,7 +64,7 @@ The button loads the version published on GitHub, so local changes must be pushe
 
        pnpm exec wrangler d1 migrations apply sourcemetric --remote --env=""
 
-8. Run checks, then pnpm deploy. Deploy builds the Vue assets, applies pending remote D1 migrations through DB, and deploys the Worker. The explicit migration in step 7 is optional because deploy also runs it.
+8. Run checks, then pnpm deploy:manual. Deploy builds the Vue assets, applies pending remote D1 migrations through DB, and deploys the Worker. The explicit migration in step 7 is optional because deploy also runs it.
 9. Confirm logged-out requests encounter Access, admitted users see the dashboard, and missing/invalid assertions are rejected by the Worker. Check deep links.
 10. Add a package and verify the next scheduled invocation persists a baseline. Verify growth after another successful collection.
 

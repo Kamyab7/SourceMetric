@@ -48,6 +48,9 @@ jobs:
       - name: Check types
         run: pnpm typecheck
 
+      - name: Check deployment setup
+        run: pnpm typecheck:setup && pnpm test:setup
+
       - name: Run unit and integration tests
         run: pnpm test
 

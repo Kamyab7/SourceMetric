@@ -13,13 +13,16 @@
     "test:e2e": "playwright test",
     "db:local": "wrangler d1 migrations apply sourcemetric --local --env local",
     "types": "wrangler types apps/worker/src/platform/env.d.ts --include-runtime=false --strict-vars=false",
-    "deploy": "pnpm build:web && pnpm db:migrate && wrangler deploy --env=\"\"",
+    "deploy": "tsx scripts/setup-cloudflare.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "demo": "node scripts/demo.mjs",
     "test:demo": "playwright test --config playwright.demo.config.ts",
     "check:deploy": "pnpm build && wrangler deploy --env=\"\" --dry-run --outdir dist/worker",
-    "db:migrate": "wrangler d1 migrations apply DB --remote --env=\"\""
+    "db:migrate": "wrangler d1 migrations apply DB --remote --env=\"\"",
+    "deploy:manual": "pnpm build:web && pnpm db:migrate && wrangler deploy --env=\"\"",
+    "test:setup": "tsx --test scripts/setup-cloudflare.test.ts",
+    "typecheck:setup": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext scripts/setup-cloudflare.ts"
   },
   "dependencies": {
     "@sourcemetric/contracts": "workspace:*",
@@ -35,7 +38,9 @@
     "@playwright/test": "^1.56.0",
     "@types/node": "^22.0.0",
     "@types/semver": "^7.7.0",
+    "jsonc-parser": "^3.3.1",
     "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.0",
     "vitest": "^4.1.0",
     "vue-tsc": "^3.1.0",
