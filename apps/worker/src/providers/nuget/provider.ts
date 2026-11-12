@@ -62,7 +62,7 @@ export class NuGetProvider implements PackageProvider {
       throw new AppError(502, 'INVALID_SOURCE', 'Registry returned an invalid endpoint.');
     const response = await this.deps.fetch(url, {
       signal: AbortSignal.timeout(12000),
-      redirect: 'error',
+      redirect: 'manual',
       headers: { accept: 'application/json' },
     });
     if (!response.ok) {

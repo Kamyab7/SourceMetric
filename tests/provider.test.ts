@@ -31,6 +31,19 @@ it('discovers endpoints, exact matches case-insensitively, and includes prerelea
   const url = new URL(String(mock.mock.calls[1]?.[0]));
   expect(url.searchParams.get('prerelease')).toBe('true');
   expect(url.searchParams.get('semVerLevel')).toBe('2.0.0');
+  expect(mock.mock.calls.every(([, options]) => options?.redirect === 'manual')).toBe(true);
+});
+it('rejects registry redirects without following them', async () => {
+  const mock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      new Response(null, { status: 302, headers: { Location: 'https://example.com/query' } }),
+    );
+  await expect(new NuGetProvider({ fetch: mock }).resolve('Example')).rejects.toMatchObject({
+    code: 'REGISTRY_UNAVAILABLE',
+  });
+  expect(mock).toHaveBeenCalledTimes(1);
+  expect(mock.mock.calls[0]?.[1]?.redirect).toBe('manual');
 });
 it('preserves missing counters and rejects unavailable packages and unknown providers', async () => {
   const { provider } = fixture([{ id: 'Example', versions: [{ version: '1.0.0' }] }]);
