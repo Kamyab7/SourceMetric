@@ -9,7 +9,7 @@ A private, self-hosted growth dashboard for open-source maintainers. Track liste
 
 ## Deploy to Cloudflare
 
-Use Wrangler and the TypeScript setup script to create and configure D1, Cloudflare Access, email one-time PIN login, and a protected `workers.dev` URL. No custom domain is required.
+Use Wrangler and the TypeScript setup script to create and configure D1, Cloudflare Access, email one-time PIN login, and a protected `workers.dev` URL. No custom domain is required. Optionally set `CUSTOM_DOMAIN=metrics.example.com` in `.env` to use a domain in your Cloudflare account instead; see the deployment guide for additional token permissions.
 
 ```bash
 pnpm install --frozen-lockfile

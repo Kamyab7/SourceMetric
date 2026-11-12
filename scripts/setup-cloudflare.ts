@@ -36,7 +36,19 @@ export function settings(env: NodeJS.ProcessEnv) {
   const subdomain = env.WORKERS_SUBDOMAIN?.trim();
   if (subdomain && !/^[a-z0-9][a-z0-9-]{0,62}$/.test(subdomain))
     throw new Error('Invalid WORKERS_SUBDOMAIN.');
-  return { accountId, token, emails, name, subdomain };
+  const customDomain = env.CUSTOM_DOMAIN?.trim().toLowerCase() || undefined;
+  if (
+    customDomain &&
+    (customDomain.length > 253 ||
+      !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(
+        customDomain,
+      ) ||
+      customDomain.endsWith('.workers.dev'))
+  )
+    throw new Error(
+      'CUSTOM_DOMAIN must be a hostname such as metrics.example.com, without a scheme, path, port, or wildcard.',
+    );
+  return { accountId, token, emails, name, subdomain, customDomain };
 }
 
 export async function setup(
@@ -80,22 +92,25 @@ export async function setup(
   }
   // Compile before creating remote resources; subsequent failures are safe to rerun.
   run(['run', 'build:web'], root);
-  let sub = await api<{ subdomain: string } | undefined>(
-    '/workers/subdomain',
-    'GET',
-    undefined,
-    true,
-  );
-  if (!sub?.subdomain) {
-    if (!options.subdomain)
-      throw new Error('Set WORKERS_SUBDOMAIN to register your account workers.dev subdomain.');
-    sub = await api('/workers/subdomain', 'PUT', { subdomain: options.subdomain });
-  } else if (options.subdomain && sub.subdomain !== options.subdomain) {
-    throw new Error(
-      'WORKERS_SUBDOMAIN differs from the existing account subdomain; refusing to rename it.',
+  let hostname = options.customDomain;
+  if (!hostname) {
+    let sub = await api<{ subdomain: string } | undefined>(
+      '/workers/subdomain',
+      'GET',
+      undefined,
+      true,
     );
+    if (!sub?.subdomain) {
+      if (!options.subdomain)
+        throw new Error('Set WORKERS_SUBDOMAIN to register your account workers.dev subdomain.');
+      sub = await api('/workers/subdomain', 'PUT', { subdomain: options.subdomain });
+    } else if (options.subdomain && sub.subdomain !== options.subdomain) {
+      throw new Error(
+        'WORKERS_SUBDOMAIN differs from the existing account subdomain; refusing to rename it.',
+      );
+    }
+    hostname = `${options.name}.${sub!.subdomain}.workers.dev`;
   }
-  const hostname = `${options.name}.${sub!.subdomain}.workers.dev`;
   let organization = await api<{ auth_domain: string } | undefined>(
     '/access/organizations',
     'GET',
@@ -163,7 +178,8 @@ export async function setup(
     ...production,
     account_id: options.accountId,
     name: options.name,
-    workers_dev: true,
+    workers_dev: !options.customDomain,
+    routes: options.customDomain ? [{ pattern: options.customDomain, custom_domain: true }] : [],
     preview_urls: false,
     main: resolve(root, base.main),
     assets: { ...base.assets, directory: resolve(root, base.assets.directory) },

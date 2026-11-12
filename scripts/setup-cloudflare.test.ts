@@ -79,58 +79,83 @@ test('permission failures stop before deployment without leaking response bodies
   );
   assert.equal(commands.length, 1);
 });
-test('fresh accounts provision resources before publishing, with production auth', async () => {
-  const writes: string[] = [];
-  const commands: string[][] = [];
-  const fakeFetch: typeof fetch = async (url, init) => {
-    const path = new URL(String(url)).pathname.split(env.CLOUDFLARE_ACCOUNT_ID)[1]!;
-    const method = init?.method || 'GET';
-    if (method === 'GET') {
-      if (path === '/workers/subdomain' || path === '/access/organizations')
-        return new Response('{}', { status: 404 });
-      return Response.json({ success: true, result: [] });
-    }
-    writes.push(path);
-    const result =
-      path === '/workers/subdomain'
-        ? { subdomain: 'fresh-team' }
-        : path === '/access/organizations'
-          ? { auth_domain: 'fresh.cloudflareaccess.com' }
-          : path === '/access/identity_providers'
-            ? { id: 'otp' }
-            : path === '/access/apps'
-              ? { id: 'app', aud: 'fresh-aud' }
-              : path === '/d1/database'
-                ? { uuid: 'fresh-db' }
-                : {};
-    return Response.json({ success: true, result });
-  };
-  await setup(
-    { ...env, WORKERS_SUBDOMAIN: 'fresh-team' },
-    fakeFetch,
-    (args) => {
-      commands.push(args);
-    },
-    '.wrangler/setup-tests',
+for (const customDomain of [undefined, 'metrics.example.com']) {
+  test(`provisions resources with production auth (${customDomain || 'workers.dev'})`, async () => {
+    const writes: string[] = [];
+    const commands: string[][] = [];
+    const fakeFetch: typeof fetch = async (url, init) => {
+      const path = new URL(String(url)).pathname.split(env.CLOUDFLARE_ACCOUNT_ID)[1]!;
+      const method = init?.method || 'GET';
+      if (method === 'GET') {
+        if (path === '/workers/subdomain' || path === '/access/organizations')
+          return new Response('{}', { status: 404 });
+        return Response.json({ success: true, result: [] });
+      }
+      writes.push(path);
+      const result =
+        path === '/workers/subdomain'
+          ? { subdomain: 'fresh-team' }
+          : path === '/access/organizations'
+            ? { auth_domain: 'fresh.cloudflareaccess.com' }
+            : path === '/access/identity_providers'
+              ? { id: 'otp' }
+              : path === '/access/apps'
+                ? { id: 'app', aud: 'fresh-aud' }
+                : path === '/d1/database'
+                  ? { uuid: 'fresh-db' }
+                  : {};
+      return Response.json({ success: true, result });
+    };
+    await setup(
+      { ...env, WORKERS_SUBDOMAIN: 'fresh-team', CUSTOM_DOMAIN: customDomain },
+      fakeFetch,
+      (args) => {
+        commands.push(args);
+      },
+      '.wrangler/setup-tests',
+    );
+    assert.deepEqual(writes, [
+      ...(!customDomain ? ['/workers/subdomain'] : []),
+      '/access/organizations',
+      '/access/identity_providers',
+      '/access/apps',
+      '/access/apps/app/policies',
+      '/d1/database',
+    ]);
+    const { readFile } = await import('node:fs/promises');
+    const config = JSON.parse(
+      await readFile(new URL('../.wrangler/setup-tests/wrangler.json', import.meta.url), 'utf8'),
+    );
+    assert.equal(config.vars.APP_ENV, 'production');
+    assert.equal(
+      config.vars.APP_ORIGIN,
+      `https://${customDomain || 'sourcemetric.fresh-team.workers.dev'}`,
+    );
+    assert.equal(config.vars.ACCESS_AUD, 'fresh-aud');
+    assert.equal(config.preview_urls, false);
+    assert.equal(config.workers_dev, !customDomain);
+    assert.deepEqual(
+      config.routes,
+      customDomain ? [{ pattern: customDomain, custom_domain: true }] : [],
+    );
+    assert.equal(config.env, undefined);
+    assert.equal(JSON.stringify(config).includes(env.CLOUDFLARE_API_TOKEN), false);
+    assert.equal(commands.at(-1)?.includes('deploy'), true);
+  });
+}
+
+test('validates custom hostnames', () => {
+  for (const domain of [
+    'https://metrics.example.com',
+    '*.example.com',
+    'example.com/path',
+    'example.com:443',
+    'localhost',
+    'test.workers.dev',
+  ])
+    assert.throws(() => settings({ ...env, CUSTOM_DOMAIN: domain }));
+  assert.equal(
+    settings({ ...env, CUSTOM_DOMAIN: ' Metrics.Example.com ' }).customDomain,
+    'metrics.example.com',
   );
-  assert.deepEqual(writes, [
-    '/workers/subdomain',
-    '/access/organizations',
-    '/access/identity_providers',
-    '/access/apps',
-    '/access/apps/app/policies',
-    '/d1/database',
-  ]);
-  const { readFile } = await import('node:fs/promises');
-  const config = JSON.parse(
-    await readFile(new URL('../.wrangler/setup-tests/wrangler.json', import.meta.url), 'utf8'),
-  );
-  assert.equal(config.vars.APP_ENV, 'production');
-  assert.equal(config.vars.APP_ORIGIN, 'https://sourcemetric.fresh-team.workers.dev');
-  assert.equal(config.vars.ACCESS_AUD, 'fresh-aud');
-  assert.equal(config.preview_urls, false);
-  assert.equal(config.workers_dev, true);
-  assert.equal(config.env, undefined);
-  assert.equal(JSON.stringify(config).includes(env.CLOUDFLARE_API_TOKEN), false);
-  assert.equal(commands.at(-1)?.includes('deploy'), true);
 });
