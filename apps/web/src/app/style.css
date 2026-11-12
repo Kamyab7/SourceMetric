@@ -91,7 +91,10 @@
     @apply text-[9px] tracking-[.18em] text-slate-500 font-semibold mt-10 mb-4 mx-3;
   }
   nav a {
-    @apply flex items-center gap-3 rounded-lg px-3 py-3 text-xs text-slate-400 transition-all;
+    @apply flex items-center gap-3 rounded-lg px-3 py-3.5 text-sm text-slate-400 transition-all;
+  }
+  aside nav a svg {
+    flex-shrink: 0;
   }
   nav a:hover {
     @apply bg-white/5 text-slate-100;
@@ -101,16 +104,19 @@
     @apply bg-primary/10 text-primary shadow-[inset_2px_0_0_0_var(--color-primary)];
   }
   .project-dot {
-    @apply size-1.5 rounded-full bg-secondary;
+    @apply size-2 shrink-0 rounded-full bg-secondary;
   }
   .sidebar-footer {
-    @apply mt-auto px-3 pt-8 text-xs text-slate-300;
+    @apply mt-auto pt-5;
   }
-  .sidebar-footer p {
-    @apply text-[10px] text-slate-500 my-3;
+  .sign-out-link {
+    @apply flex min-h-11 w-full items-center gap-3 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-3.5 text-sm font-medium text-slate-400 transition-colors;
   }
-  .sidebar-footer a {
-    @apply text-slate-400 hover:text-primary;
+  .sign-out-link:hover {
+    @apply border-red-400/20 bg-red-400/10 text-red-300;
+  }
+  .sign-out-link:active {
+    @apply bg-red-400/15;
   }
   .main {
     @apply flex-1 min-w-0;
@@ -310,7 +316,7 @@ body {
   }
   aside nav a {
     padding: 9px;
-    font-size: 11px;
+    font-size: 14px;
   }
   aside .workspace-label,
   aside .sidebar-footer,

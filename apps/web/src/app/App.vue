@@ -46,7 +46,7 @@ const navigation = [
           class="w-full h-auto"
         />
       </RouterLink>
-      <p class="workspace-label">WORKSPACE / CONTROL CENTER</p>
+      <p class="workspace-label">WORKSPACE</p>
       <nav class="menu w-full p-0 gap-1" aria-label="Main navigation">
         <RouterLink
           v-for="item in navigation"
@@ -54,7 +54,7 @@ const navigation = [
           :to="item.to"
           exact-active-class="selected"
           :aria-label="item.label"
-          ><component :is="item.icon" :size="18" :stroke-width="1.6" aria-hidden="true" /><span>{{
+          ><component :is="item.icon" :size="22" :stroke-width="1.6" aria-hidden="true" /><span>{{
             item.label
           }}</span></RouterLink
         >
@@ -63,23 +63,15 @@ const navigation = [
       <nav class="menu w-full p-0" aria-label="Projects">
         <RouterLink v-for="p in activeProjects.slice(0, 8)" :key="p.id" :to="'/projects/' + p.id"
           ><span class="project-dot" />{{ p.name
-          }}<ChevronRight :size="13" class="ml-auto" aria-hidden="true"
+          }}<ChevronRight :size="16" class="ml-auto" aria-hidden="true"
         /></RouterLink>
         <RouterLink v-if="activeProjects.length > 8" to="/projects"
-          >View all {{ activeProjects.length }} projects<ChevronRight :size="13" aria-hidden="true"
+          >View all {{ activeProjects.length }} projects<ChevronRight :size="16" aria-hidden="true"
         /></RouterLink>
       </nav>
-      <div class="sidebar-footer">
-        <div class="flex items-center gap-2">
-          <span class="status status-success" />
-          {{ health.data.value?.demo ? 'Demo workspace' : 'Private workspace' }}
-        </div>
-        <p>Self-hosted. Your data stays yours.</p>
-        <a
-          v-if="!health.data.value?.demo"
-          class="flex items-center gap-2"
-          href="/cdn-cgi/access/logout"
-          ><LogOut :size="14" aria-hidden="true" />Sign out</a
+      <div v-if="!health.data.value?.demo" class="sidebar-footer">
+        <a class="sign-out-link" href="/cdn-cgi/access/logout"
+          ><LogOut :size="22" :stroke-width="1.6" aria-hidden="true" /><span>Sign out</span></a
         >
       </div>
     </aside>
@@ -103,10 +95,10 @@ const navigation = [
             ></span
           >
         </div>
-        <span class="flex items-center gap-2 text-[11px] text-slate-400"
+        <span class="flex items-center gap-2 text-sm font-medium text-slate-300"
           ><component
             :is="health.data.value?.demo ? FlaskConical : ShieldCheck"
-            :size="14"
+            :size="18"
             class="text-primary"
             aria-hidden="true"
           />{{ health.data.value?.demo ? 'Demo · synthetic data' : 'Cloudflare Access' }}</span
@@ -132,7 +124,7 @@ const navigation = [
             height="18"
             aria-hidden="true"
           />SourceMetric</span
-        ><span>OPEN SOURCE INTELLIGENCE · UTC</span>
+        >
       </footer>
     </div>
   </div>
