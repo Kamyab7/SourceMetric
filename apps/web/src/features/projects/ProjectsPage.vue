@@ -105,10 +105,12 @@ function rename(id: string, current: string) {
           :to="'/packages?projectId=' + project.id"
           ><ArrowUpRight :size="14" aria-hidden="true" />Manage packages</RouterLink
         >
+        <RouterLink
+          class="btn btn-sm btn-soft btn-primary border-0 shadow-none text-primary"
+          :to="'/repositories?projectId=' + project.id"
+          ><ArrowUpRight :size="14" aria-hidden="true" />Manage repositories</RouterLink
+        >
       </div>
-      <RouterLink class="btn btn-sm btn-ghost" :to="'/repositories?projectId=' + project.id"
-        >Manage repositories</RouterLink
-      >
     </article>
   </div>
   <Pagination

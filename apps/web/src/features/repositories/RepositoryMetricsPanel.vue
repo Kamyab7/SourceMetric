@@ -35,58 +35,20 @@ const metrics = useQuery({
         <p v-if="metrics.data.value.truncated" role="alert" class="error">
           Results truncated. Select a shorter range or one repository. Comparisons are unavailable.
         </p>
-        <div class="stats">
+        <div class="stats grid-flow-row grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
           <article v-for="key in ['stars', 'forks'] as const" :key="key">
-            <span class="eyebrow">{{ key }}</span
-            ><strong>{{ number(metrics.data.value[key].latest) }}</strong
-            ><span class="muted small"
-              >Latest as of range end · net change {{ number(metrics.data.value[key].change)
-              }}<br />{{
-                metrics.data.value[key].complete ? 'Complete coverage' : 'Partial coverage'
-              }}
-              · vs. previous
-              {{
-                metrics.data.value[key].comparison === null
-                  ? 'N/A'
-                  : number(metrics.data.value[key].comparison) + '%'
-              }}</span
-            >
+            <span class="eyebrow text-base">{{ key }}</span>
+            <strong>{{ number(metrics.data.value[key].latest) }}</strong>
           </article>
           <article>
-            <span class="eyebrow">Clones</span
-            ><strong>{{ number(metrics.data.value.clones.total) }}</strong
-            ><span class="muted small"
-              >Observed complete UTC days ·
-              {{ metrics.data.value.clones.complete ? 'complete coverage' : 'partial coverage'
-              }}<br />vs. previous
-              {{
-                metrics.data.value.clones.comparison === null
-                  ? 'N/A'
-                  : number(metrics.data.value.clones.comparison) + '%'
-              }}</span
-            >
+            <span class="eyebrow text-base">Clones</span>
+            <strong>{{ number(metrics.data.value.clones.total) }}</strong>
           </article>
           <article>
-            <span class="eyebrow">Views</span
-            ><strong>{{ number(metrics.data.value.views.total) }}</strong
-            ><span class="muted small"
-              >Observed complete UTC days ·
-              {{ metrics.data.value.views.complete ? 'complete coverage' : 'partial coverage'
-              }}<br />vs. previous
-              {{
-                metrics.data.value.views.comparison === null
-                  ? 'N/A'
-                  : number(metrics.data.value.views.comparison) + '%'
-              }}</span
-            >
+            <span class="eyebrow text-base">Views</span>
+            <strong>{{ number(metrics.data.value.views.total) }}</strong>
           </article>
         </div>
-        <p class="muted small">
-          Stars and forks are snapshots; change is measured between observations inside the range.
-          View and clone totals include fully contained, non-provisional daily buckets. Missing days
-          are unknown. Daily unique visitors and cloners cannot be added into a period-wide unique
-          count. All times UTC.
-        </p>
         <label
           >Chart metric<select class="select select-bordered" v-model="metric">
             <option value="stars">Stars</option>

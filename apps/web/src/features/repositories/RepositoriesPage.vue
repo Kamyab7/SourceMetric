@@ -105,10 +105,6 @@ function remove(id: string) {
       ><button class="btn btn-primary" :disabled="busy">+ Track repository</button>
     </form>
     <p v-if="resolved" role="status">{{ resolved }}</p>
-    <p class="muted small">
-      GitHub.com only. Configure the GITHUB_TOKEN Worker secret. Collection runs hourly for
-      repositories due every six hours.
-    </p>
     <form
       v-if="projectId"
       class="inline-form"

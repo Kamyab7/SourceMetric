@@ -44,10 +44,6 @@ watch(
 </script>
 <template>
   <h2>Repository collection health</h2>
-  <p class="muted small">
-    Separate budget: four repositories per hourly invocation. Traffic errors retain successful star
-    and fork snapshots.
-  </p>
   <p v-if="sync.error.value" class="error" role="alert">{{ sync.error.value.message }}</p>
   <section class="card bg-base-100 border border-base-300 panel">
     <h2>Repository collection schedule</h2>
@@ -137,8 +133,4 @@ watch(
       label="repository attempts"
     />
   </section>
-  <p class="muted small">
-    Repository snapshots and attempt history grow with each collection. Review D1 storage usage in
-    Cloudflare; free-tier hosting is not unlimited.
-  </p>
 </template>

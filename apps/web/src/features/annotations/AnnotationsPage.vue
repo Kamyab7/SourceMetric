@@ -84,9 +84,13 @@ async function action(run: () => Promise<unknown>) {
   </div>
   <form class="card bg-base-100 border border-base-300 panel note-form" @submit.prevent="save">
     <h2>{{ editing ? 'Edit note' : 'Add a note' }}</h2>
-    <div class="two-columns">
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
       <label
-        >Project or package<select class="select select-bordered" v-model="target" required>
+        >Project or package<select
+          class="select select-bordered h-11 w-full"
+          v-model="target"
+          required
+        >
           <option disabled value="">Choose a target</option>
           <optgroup label="Projects">
             <option v-for="p in projects.data.value?.items" :key="p.id" :value="'project:' + p.id">
@@ -101,29 +105,35 @@ async function action(run: () => Promise<unknown>) {
         </select></label
       ><label
         >Date and time (UTC)<input
-          class="input input-bordered w-full"
+          class="input input-bordered h-11 w-full"
           v-model="date"
           type="datetime-local"
           required
       /></label>
     </div>
-    <div class="two-columns">
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
       <label
         >Title<input
-          class="input input-bordered w-full"
+          class="input input-bordered h-11 w-full"
           v-model="title"
           maxlength="120"
           required
           placeholder="Launch blog post" /></label
       ><label
-        >Kind<select class="select select-bordered" v-model="kind">
+        >Kind<select class="select select-bordered h-11 w-full" v-model="kind">
           <option value="campaign">Campaign</option>
           <option value="release">Release</option>
         </select></label
       >
     </div>
     <label
-      >Notes<textarea class="textarea textarea-bordered" v-model="body" maxlength="2000" rows="3" />
+      >Notes<textarea
+        class="textarea textarea-bordered min-h-40 w-full resize-y"
+        v-model="body"
+        maxlength="2000"
+        rows="6"
+        placeholder="Add details about the release or campaign…"
+      />
     </label>
     <div class="actions">
       <button class="btn btn-primary" :disabled="busy">Save note</button

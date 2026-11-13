@@ -92,9 +92,6 @@ function remove(id: string) {
         </select></label
       ><button class="btn btn-primary" :disabled="busy">+ Track package</button>
     </form>
-    <p class="muted small">
-      Only listed nuget.org packages. Collection runs hourly for packages due every six hours.
-    </p>
     <form
       v-if="projectId"
       class="inline-form"

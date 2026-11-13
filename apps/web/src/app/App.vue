@@ -13,11 +13,13 @@ import {
   ChevronRight,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { healthSchema } from '@sourcemetric/contracts';
 import { api } from '../shared/api';
 import { useProjects } from '../features/projects/queries';
 const menuOpen = ref(true);
+const route = useRoute();
 const projects = useProjects();
 const health = useQuery({
   queryKey: ['health'],
@@ -33,6 +35,14 @@ const navigation = [
   { to: '/annotations', label: 'Releases & campaigns', icon: Megaphone },
   { to: '/sync', label: 'Collection health', icon: Activity },
 ];
+const breadcrumbLabel = computed(
+  () =>
+    navigation.find((item) =>
+      item.to === '/'
+        ? route.path === '/'
+        : route.path === item.to || route.path.startsWith(`${item.to}/`),
+    )?.label ?? 'Overview',
+);
 </script>
 <template>
   <div class="shell">
@@ -90,9 +100,9 @@ const navigation = [
           </button>
           <span class="flex items-center gap-3"
             ><span class="text-primary">Workspace</span
-            ><ChevronRight :size="12" aria-hidden="true" /><span class="muted"
-              >Package & repository insights</span
-            ></span
+            ><ChevronRight :size="12" aria-hidden="true" /><span class="muted">{{
+              breadcrumbLabel
+            }}</span></span
           >
         </div>
         <span class="flex items-center gap-2 text-sm font-medium text-slate-300"

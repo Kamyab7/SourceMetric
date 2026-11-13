@@ -121,9 +121,5 @@ watch(
       label="collection attempts"
     />
   </section>
-  <p class="muted small">
-    Stored observations grow with packages × versions × collections. Review D1 storage usage in
-    Cloudflare; free-tier hosting is not unlimited.
-  </p>
   <RepositorySyncPanel />
 </template>
