@@ -1,94 +1,102 @@
 # SourceMetric
 
-> [!WARNING]
-> SourceMetric is under active development and is not yet production-ready. Features, APIs, and the database schema may change without backward compatibility. Use it for evaluation and testing, and back up your data before upgrading.
+SourceMetric collects marketing and growth data for open-source maintainers. Track NuGet downloads and GitHub stars, forks, clones, and views in one private dashboard. Add release and campaign notes to see how your outreach relates to changes in your projects.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https%3A%2F%2Fgithub.com%2FKamyab7%2FSourceMetric)
+Host it on your own Cloudflare account with a single setup script. It is designed for Cloudflare’s free tier, within its [usage limits](https://developers.cloudflare.com/workers/platform/limits/) and [database allowance](https://developers.cloudflare.com/d1/platform/pricing/).
 
-A private, self-hosted growth dashboard for open-source maintainers. Track listed NuGet packages and GitHub repositories, retain download/clone history and star/fork snapshots, and add release or campaign notes.
+## Quick start
 
-## Deploy to Cloudflare
+You need Node.js 22.12+, pnpm 11, and a Cloudflare account with Zero Trust onboarding completed.
 
-Use Wrangler and the TypeScript setup script to create and configure D1, Cloudflare Access, email one-time PIN login, and a protected `workers.dev` URL. No custom domain is required. Optionally set `CUSTOM_DOMAIN=metrics.example.com` in `.env` to use a domain in your Cloudflare account instead; see the deployment guide for additional token permissions.
+1. Clone the repository and install dependencies:
+
+   ```bash
+   git clone https://github.com/Kamyab7/SourceMetric.git
+   cd SourceMetric
+   pnpm install --frozen-lockfile
+   cp .env.example .env
+   ```
+
+2. Fill in `.env` with your account details:
+
+   ```dotenv
+   CLOUDFLARE_ACCOUNT_ID=your-account-id
+   CLOUDFLARE_API_TOKEN=your-api-token
+   ACCESS_ALLOWED_EMAILS=you@example.com
+   ```
+
+   | Variable                | What to enter                                                      |
+   | ----------------------- | ------------------------------------------------------------------ |
+   | `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID, available in the Cloudflare dashboard. |
+   | `CLOUDFLARE_API_TOKEN`  | An account-scoped API token with the permissions listed below.     |
+   | `ACCESS_ALLOWED_EMAILS` | Email addresses allowed to sign in, separated by commas.           |
+
+   Give the Cloudflare API token these account permissions: **Workers Scripts: Edit**, **Workers Tail: Read**, **D1: Edit**, **Access: Apps and Policies: Edit**, and **Access: Organizations, Identity Providers, and Groups: Edit**.
+
+   Optional settings:
+
+   | Variable            | When to use it                                                                                                                                                                                                  |
+   | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `GITHUB_TOKEN`      | Enable GitHub repository collection. Use a fine-grained token with **Metadata: read** and **Administration: read** for the repositories you want to track. Your account must have access to their traffic data. |
+   | `WORKERS_SUBDOMAIN` | Choose a unique subdomain if your Cloudflare account does not already have a `workers.dev` subdomain.                                                                                                           |
+   | `WORKER_NAME`       | Change the deployment name; defaults to `sourcemetric`.                                                                                                                                                         |
+   | `CUSTOM_DOMAIN`     | Use your own hostname, such as `metrics.example.com`, instead of `workers.dev`. See [custom domain setup](docs/deployment.md#automated-wrangler-setup) for the extra permissions.                               |
+
+   NuGet tracking needs no token. Keep `.env` private; it is ignored by Git.
+
+3. Run the setup script:
+
+   ```bash
+   pnpm deploy
+   ```
+
+   The script builds and deploys SourceMetric, creates its database, schedules collection, and sets up email sign-in. No custom domain is required. Open the URL it prints and sign in with an allowed email address using a one-time PIN.
+
+4. Add your packages and repositories, then group them into projects. Data collection runs automatically; history builds as new observations arrive.
+
+Run `pnpm deploy` again to deploy updates. For more setup help, see the [deployment guide](docs/deployment.md).
+
+## Useful commands
+
+### Try the demo
 
 ```bash
-pnpm install --frozen-lockfile
-cp .env.example .env
-# Edit .env with your account ID, API token, and allowed email addresses.
-pnpm deploy
+pnpm demo
 ```
 
-The script builds the frontend, provisions services, applies migrations, and deploys the Worker, assets, hourly schedule, and observability configuration. Rerun the same command for updates. The setup script loads the root `.env` file automatically; existing shell or CI variables take precedence. `.env` is ignored by Git. See [deployment setup and permissions](docs/deployment.md#automated-wrangler-setup).
+Open [localhost:8790](http://localhost:8790) to explore sample projects, metrics, and campaign notes. No Cloudflare account or API tokens are needed. The demo is read-only and resets its sample data on each launch. Stop it with Ctrl+C.
 
-The deploy button remains an alternative for custom-domain deployments; use `pnpm run deploy:manual` as its deploy command and finish the [manual Access setup](docs/deployment.md#deploy-button).
+To use another port:
 
-## Included
+```bash
+DEMO_PORT=8791 pnpm demo
+```
 
-- Vue 3 dashboard with a dark Tailwind CSS/daisyUI theme, self-hosted Inter, Lucide icons, and workspace, project, and package views, date filters, version channels, ECharts trends, and CSV exports.
-- GitHub repository management, project associations, clone/view history, daily unique visitors, star/fork net change, historical popular-content/referrer snapshots, charts, CSV exports, and per-endpoint collection health. Optional deployment-level `GITHUB_TOKEN` secret; see [setup](docs/deployment.md#github-repository-metrics).
-- Projects with shared packages, archive/restore, and explicit permanent history deletion.
-- NuGet service discovery, exact package resolution, package/version counters, and version discovery notes.
-- Hourly Worker scheduling, six-hour per-package cadence, bounded collection, expiring D1 leases, retries, and collection status.
-- D1 SQL migrations and Drizzle, shared Zod contracts, Access JWT verification, and mutation-origin checks.
-- Provider factory and measurement contracts for additional registry adapters. Only NuGet is implemented.
+### Run locally
 
-One deployment is one shared workspace. Everyone admitted by Access has the same permissions.
+```bash
+pnpm db:local
+pnpm dev
+```
 
-## Explore the demo
+Open [localhost:8787](http://localhost:8787). For frontend hot reload, run `pnpm dev:web` in another terminal and open [localhost:5173](http://localhost:5173).
 
-    pnpm install --frozen-lockfile
-    pnpm run demo
+### Build and check
 
-Open [localhost:8790](http://localhost:8790). No Cloudflare account, Access setup, or NuGet connection is needed.
+| Command             | Purpose                                       |
+| ------------------- | --------------------------------------------- |
+| `pnpm deploy`       | Set up or update your Cloudflare deployment.  |
+| `pnpm build`        | Build the frontend.                           |
+| `pnpm typecheck`    | Check TypeScript types.                       |
+| `pnpm test`         | Run unit and integration tests.               |
+| `pnpm check:deploy` | Check deployment packaging without deploying. |
+| `pnpm test:e2e`     | Run browser tests.                            |
+| `pnpm test:demo`    | Run demo browser tests.                       |
+| `pnpm format:check` | Check formatting.                             |
+| `pnpm format`       | Format the project.                           |
 
-The demo includes three projects, six synthetic packages, seven months of six-hour observations, version adoption, three GitHub repositories with snapshot/clone histories and partial failures, release/campaign annotations, and collection activity. All screens and CSV exports use the real Worker API and local D1 queries. Demo mode is read-only and never fetches registry or GitHub data.
-
-Every launch rebuilds the app and resets **only** the separate demo database in .wrangler/demo-state, with dates refreshed relative to today. Your development and production databases are unaffected. Stop with Ctrl+C. Set DEMO_PORT to choose a different port, for example DEMO_PORT=8791 pnpm run demo.
-
-## Local development
-
-Requires Node.js 22.12+ and pnpm 11.
-
-    pnpm install --frozen-lockfile
-    pnpm db:local
-    pnpm dev
-
-Open [localhost:8787](http://localhost:8787). The local Wrangler environment bypasses Access **only on loopback hostnames**. Local development uses local D1 and makes real read-only requests to nuget.org when registering or collecting packages.
-
-For Vue hot reload, run pnpm dev:web in another terminal and open [localhost:5173](http://localhost:5173). Its API proxy uses the local Worker.
-
-Register a package and wait for collection, or trigger the development-only scheduled endpoint:
-
-    curl 'http://localhost:8787/__scheduled?cron=0+*+*+*+*'
-
-The endpoint is supplied by Wrangler's test-scheduled option, not a production API. Manual refresh queues for the next hourly run. Four packages are processed per invocation with concurrency two. This is below the planned maximum of five to leave free-tier query/subrequest headroom; twenty packages fit within a six-hour scheduling cycle.
-
-## Checks
-
-    pnpm types
-    pnpm typecheck
-    pnpm test
-    pnpm build
-    pnpm check:deploy
-    pnpm exec playwright install chromium
-    pnpm test:e2e
-    pnpm test:demo
-    pnpm format:check
-
-Tests use the current Cloudflare Vitest plugin and local Workers runtime. Integration tests isolate D1 storage; Playwright uses a separate local state directory. Tests never deploy. The check:deploy command validates production Worker packaging with a dry run; build only compiles the Vue app.
-
-Pull requests targeting master run the [CI workflow](.github/workflows/ci.yml): frozen-lockfile installation, formatting, type checks, unit/integration tests, production build and Worker packaging dry run, and both browser suites. Failed browser runs upload screenshots and Playwright traces for seven days. The workflow also supports manual runs and does not deploy or require Cloudflare credentials.
-
-## Deployment and architecture
-
-- [Deployment, Access, backups, and operations](docs/deployment.md)
-- [Feature architecture, API, and provider extension](docs/architecture.md)
-- [Measurement semantics and capacity](docs/metrics-and-capacity.md)
-
-The automated setup provisions D1 and Access for the workers.dev hostname. Production continues to verify Access JWTs and mutation origins.
-
-Free-tier operation is a target, **not verified on a deployed account**. Indefinite version history consumes storage; single-database limits matter.
+Before running browser tests, install Chromium with `pnpm exec playwright install chromium`.
 
 ## License
 
-[MIT](LICENSE)
+SourceMetric is licensed under the [MIT License](LICENSE).
