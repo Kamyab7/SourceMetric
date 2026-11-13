@@ -1,7 +1,11 @@
 import type { Context } from 'hono';
 import type { z } from 'zod';
 import { AppError } from './errors';
-export type AppBindings = { Bindings: Env };
+import type { OAuthHelpers } from '@cloudflare/workers-oauth-provider';
+export type AppBindings = {
+  Bindings: Env & { OAUTH_PROVIDER?: OAuthHelpers };
+  Variables: { userId: string; consentRedirectOrigin?: string };
+};
 export async function body<T extends z.ZodType>(
   c: Context<AppBindings>,
   schema: T,
