@@ -100,3 +100,15 @@ Before running browser tests, install Chromium with `pnpm exec playwright instal
 ## License
 
 SourceMetric is licensed under the [MIT License](LICENSE).
+
+### AI connections (read-only MCP)
+
+Open **AI connections** to copy your `/mcp` URL and add it as an OAuth-enabled
+remote MCP server in your AI client. Sign in through Cloudflare Access and approve
+read-only access to all tracked stats, including private GitHub repository names
+and traffic. You can view and revoke your connections on the same page. The MCP
+server exposes nine read tools and cannot edit data or queue collection.
+
+Existing deployments need a dedicated OAuth KV namespace, the connection-registry
+migration, and path-specific Access bypass applications for protocol discovery,
+registration, tokens and `/mcp`. See the [OAuth MCP deployment guide](docs/deployment.md#read-only-oauth-mcp-connections).

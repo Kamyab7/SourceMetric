@@ -1,6 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { settings, setup } from './setup-cloudflare.ts';
+const publicPaths = [
+  '/mcp',
+  '/.well-known/oauth-authorization-server',
+  '/.well-known/oauth-protected-resource',
+  '/.well-known/oauth-protected-resource/mcp',
+  '/oauth/token',
+  '/oauth/register',
+];
 const env = {
   CLOUDFLARE_ACCOUNT_ID: 'a'.repeat(32),
   CLOUDFLARE_API_TOKEN: 'test-token',
@@ -34,11 +42,22 @@ test('reuses resources, reconciles the allowlist, migrates before deploying', as
           domain: 'sourcemetric.my-team.workers.dev',
           name: 'SourceMetric setup: sourcemetric',
         },
+        ...publicPaths.map((path, index) => ({
+          id: `bypass-${index}`,
+          domain: 'sourcemetric.my-team.workers.dev' + path,
+          name: 'SourceMetric MCP setup: sourcemetric' + path,
+        })),
       ];
     else if (path === '/access/apps/app') result = { id: 'app', aud: 'audience' };
     else if (path === '/access/apps/app/policies')
       result = [{ id: 'policy', name: 'SourceMetric email allowlist' }];
     else if (path === '/access/apps/app/policies/policy') result = {};
+    else if (/^\/access\/apps\/bypass-\d+$/.test(path)) result = { id: path.split('/').at(-1) };
+    else if (/^\/access\/apps\/bypass-\d+\/policies$/.test(path))
+      result = [{ id: 'bypass-policy', name: 'SourceMetric OAuth protocol bypass' }];
+    else if (path.endsWith('/bypass-policy')) result = {};
+    else if (path === '/storage/kv/namespaces')
+      result = [{ id: 'oauth-kv', title: 'sourcemetric-oauth' }];
     else if (path === '/d1/database') result = [{ name: 'sourcemetric', uuid: 'database' }];
     else throw new Error(`Unexpected ${path}`);
     return Response.json({ success: true, result });
@@ -58,6 +77,17 @@ test('reuses resources, reconciles the allowlist, migrates before deploying', as
   assert.deepEqual(calls.find((c) => c.path.endsWith('/policy'))?.body.include, [
     { email: { email: 'owner@example.com' } },
   ]);
+  const bypassWrites = calls.filter((c) => c.path.endsWith('/bypass-policy'));
+  assert.equal(bypassWrites.length, publicPaths.length);
+  assert.ok(
+    bypassWrites.every(
+      (c) => c.body.decision === 'bypass' && JSON.stringify(c.body.include) === '[{"everyone":{}}]',
+    ),
+  );
+  assert.equal(
+    calls.some((c) => c.body?.domain?.endsWith('/authorize')),
+    false,
+  );
   assert.equal(commands[1]?.includes('migrations'), true);
   assert.equal(commands[2]?.includes('deploy'), true);
 });
@@ -101,9 +131,11 @@ for (const customDomain of [undefined, 'metrics.example.com']) {
               ? { id: 'otp' }
               : path === '/access/apps'
                 ? { id: 'app', aud: 'fresh-aud' }
-                : path === '/d1/database'
-                  ? { uuid: 'fresh-db' }
-                  : {};
+                : path === '/storage/kv/namespaces'
+                  ? { id: 'fresh-kv' }
+                  : path === '/d1/database'
+                    ? { uuid: 'fresh-db' }
+                    : {};
       return Response.json({ success: true, result });
     };
     await setup(
@@ -120,12 +152,16 @@ for (const customDomain of [undefined, 'metrics.example.com']) {
       '/access/identity_providers',
       '/access/apps',
       '/access/apps/app/policies',
+      ...publicPaths.flatMap(() => ['/access/apps', '/access/apps/app/policies']),
+      '/storage/kv/namespaces',
       '/d1/database',
     ]);
     const { readFile } = await import('node:fs/promises');
     const config = JSON.parse(
       await readFile(new URL('../.wrangler/setup-tests/wrangler.json', import.meta.url), 'utf8'),
     );
+    assert.deepEqual(config.kv_namespaces, [{ binding: 'OAUTH_KV', id: 'fresh-kv' }]);
+    assert.ok(config.compatibility_flags.includes('global_fetch_strictly_public'));
     assert.equal(config.vars.APP_ENV, 'production');
     assert.equal(
       config.vars.APP_ORIGIN,

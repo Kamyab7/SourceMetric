@@ -20,7 +20,7 @@ Optional variables:
 | `WORKERS_SUBDOMAIN` | Reuses the account's existing subdomain; required to register one on a fresh account. Never renames an existing subdomain. |
 | `GITHUB_TOKEN`      | If supplied, uploads the optional repository-metrics secret through stdin; otherwise leaves any existing secret unchanged  |
 
-Create an account-scoped API token with **Workers Scripts: Edit**, **Workers Tail: Read** (deployment observability), **D1: Edit**, **Access: Apps and Policies: Edit**, and **Access: Organizations, Identity Providers, and Groups: Edit** permissions. No DNS or zone permission is needed. Copy `.env.example` to `.env` in the repository root and fill in the values, or use a protected CI environment. The script loads `.env` automatically without overriding existing shell or CI variables. A missing `.env` is allowed. `.env` is ignored by Git, and the script does not print tokens. You must already have a Cloudflare account and any required account/Zero Trust plan onboarding completed; it does not purchase subscriptions.
+Create an account-scoped API token with **Workers Scripts: Edit**, **Workers Tail: Read** (deployment observability), **D1: Edit**, **Workers KV Storage: Edit**, **Access: Apps and Policies: Edit**, and **Access: Organizations, Identity Providers, and Groups: Edit** permissions. No DNS or zone permission is needed. Copy `.env.example` to `.env` in the repository root and fill in the values, or use a protected CI environment. The script loads `.env` automatically without overriding existing shell or CI variables. A missing `.env` is allowed. `.env` is ignored by Git, and the script does not print tokens. You must already have a Cloudflare account and any required account/Zero Trust plan onboarding completed; it does not purchase subscriptions.
 
 Run the commands in the README. The script reuses or registers the account workers.dev subdomain, reuses or creates a Zero Trust organization, and reuses or creates an email one-time PIN identity provider. It creates an Access application for the entire Worker hostname and reconciles its explicit email allowlist on each run. Other applications and organization settings are preserved. It refuses to overwrite an existing application without its setup naming marker or to proceed with unexpected policies. Use the same account and Worker name on subsequent deployments; changing the name provisions another deployment.
 
@@ -97,7 +97,7 @@ Worker rollback does not roll back D1 migrations. Future migrations should suppo
 
 ## Isolation
 
-Local development uses .wrangler/state; Playwright uses .wrangler/e2e-state. Test bindings never reference remote resources. Production rejects missing Access configuration. There are no public data endpoints or badges.
+Local development uses .wrangler/state; Playwright uses .wrangler/e2e-state. Test bindings never reference remote resources. Production rejects missing Access configuration. MCP discovery, registration and token endpoints are reachable without Access browser login; `/mcp` requires its own OAuth bearer token. There are no public statistics endpoints or badges.
 
 References: [Deploy button setup](https://developers.cloudflare.com/workers/platform/deploy-buttons/), [Access JWT validation](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/), [Workers configuration](https://developers.cloudflare.com/workers/wrangler/configuration/), [D1 Time Travel](https://developers.cloudflare.com/d1/reference/time-travel/).
 
@@ -120,3 +120,85 @@ The existing GitHub token's **Administration: read** permission covers views, po
 Collection health now shows last success and errors separately for clones, views, paths, and referrers. An overall partial attempt can contain successful metrics alongside failed/deferred endpoints. Old clone-specific status fields remain compatible. Historical snapshots are retained indefinitely and are removed only by confirmed repository-history deletion.
 
 Before increasing a real deployment's workload, measure scheduled CPU, wall time, outgoing requests, D1 reads/writes/statements, and database growth across at least two six-hour cycles using representative packages and repositories. The three extra traffic endpoints and retained ranking snapshots add cost; production capacity remains unverified.
+
+## Read-only OAuth MCP connections
+
+SourceMetric serves a stateless Streamable HTTP MCP server at `https://YOUR_HOST/mcp`.
+In a compatible remote MCP client, add this URL and select OAuth authentication. The
+client opens `/authorize`, where the maintainer signs in through the existing
+Cloudflare Access email policy and explicitly approves or denies the connection.
+Use **AI connections** in the sidebar to copy the URL, view your grants, or revoke
+one. Connections belong to the Access subject that approved them; other admitted
+maintainers have the same workspace data visibility but cannot manage your grants.
+
+Approved clients can read all tracked projects, NuGet package statistics, GitHub
+repository statistics, private repository names and traffic, and release/campaign
+context. The nine tools only query existing stored data. They cannot refresh
+collection, manage projects/packages/repositories, edit annotations, or execute
+SQL/HTTP requests. OAuth tokens cannot sign in to the existing REST API or UI.
+Tool results preserve nulls, quality/completeness and truncation indicators, and
+traffic snapshots describe overlapping rolling 14-day windows. Results exceeding
+1 MiB return an error asking the client to narrow filters, dates, or pagination.
+
+### Upgrade and configuration
+
+`pnpm deploy` now provisions/reuses an isolated `${WORKER_NAME}-oauth` KV namespace
+as `OAUTH_KV`, applies migration `0004_mcp_connections.sql`, and reconciles six
+path-specific Access applications with a Bypass / Everyone policy:
+
+- `/mcp`
+- `/.well-known/oauth-authorization-server`
+- `/.well-known/oauth-protected-resource`
+- `/.well-known/oauth-protected-resource/mcp`
+- `/oauth/token`
+- `/oauth/register`
+
+These are exceptions only to the Access browser login. The Worker enforces OAuth
+on `/mcp`; discovery and client registration do not disclose statistics. The
+parent hostname Access application and its email allowlist remain unchanged.
+`/authorize`, `/connections`, `/api`, assets and other paths still require Access.
+Cloudflare uses the most specific matching application; do not bypass the whole
+hostname, `/oauth/*`, `/api/*`, or `/.well-known/*`.
+
+For manual or Deploy-button setups, create a dedicated KV namespace, replace the
+placeholder top-level `OAUTH_KV` ID in Wrangler, and create those Access bypass
+applications yourself. Keep `global_fetch_strictly_public` in compatibility flags;
+it is required for safe Client ID Metadata Document fetching. Local and synthetic
+demo KV storage are isolated from production. OAuth approval is disabled in demo.
+The automated deployment token additionally needs **Workers KV Storage: Edit**.
+Setup refuses to overwrite unmanaged endpoint applications or unexpected policies.
+
+Only `stats:read` and optional `offline_access` are supported. PKCE S256 is required.
+Access tokens last one hour; rotating refresh tokens cannot extend a connection
+beyond 30 days from approval. Reconnect after expiry. Revocation records a D1
+block before provider cleanup, so subsequent MCP requests are rejected even if KV
+has not propagated deletion. If grant cleanup fails, use **Retry grant cleanup**;
+the D1 block remains effective. In-flight requests may finish. Removing someone
+from the Access allowlist prevents new approvals, but existing OAuth connections
+must also be revoked, or allowed to expire. Credential values are never shown in
+connection lists or application logs.
+
+### Staging acceptance
+
+Run `pnpm typecheck`, `pnpm test`, `pnpm test:setup`, `pnpm typecheck:setup`,
+`pnpm test:e2e`, and `pnpm check:deploy` before rollout. After deploying to a
+separate staging Worker with separate D1/KV resources:
+
+1. Use MCP Inspector against `/mcp` and verify discovery, browser sign-in, explicit
+   consent, all nine tools, token refresh and revocation.
+2. Connect representative ChatGPT/Claude/IDE clients using their normal OAuth MCP
+   flow. Both dynamic registration and HTTPS Client ID Metadata Documents are
+   supported; compatibility depends on the client's remote MCP support.
+3. Verify anonymous requests to the UI, `/api/v1/projects`, `/api/v1/connections`
+   and `/authorize` require Access, while discovery responds without an Access
+   redirect and unauthenticated `/mcp` returns an OAuth `401` challenge.
+4. Verify an admitted maintainer can deny consent and revoke a connection, another
+   maintainer cannot revoke it, and revoked/expired tokens cannot read statistics.
+
+Local checks do not validate live Access precedence, email delivery, remote-client
+compatibility or production capacity. No staging deployment is performed by the
+check commands.
+
+References: [Workers OAuth Provider](https://github.com/cloudflare/workers-oauth-provider),
+[Access application paths](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/app-paths/),
+[KV namespace API](https://developers.cloudflare.com/api/resources/kv/subresources/namespaces/methods/create/).
