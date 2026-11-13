@@ -25,6 +25,10 @@ const router = createRouter({
       path: '/annotations',
       component: () => import('../features/annotations/AnnotationsPage.vue'),
     },
+    {
+      path: '/connections',
+      component: () => import('../features/connections/ConnectionsPage.vue'),
+    },
     { path: '/sync', component: () => import('../features/sync/SyncPage.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],

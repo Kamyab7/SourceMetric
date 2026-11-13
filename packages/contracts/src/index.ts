@@ -295,3 +295,19 @@ export const trafficListSchema = z.object({
   ),
   total: z.number(),
 });
+
+export const connectionSchema = z.object({
+  id: idSchema,
+  clientName: z.string(),
+  cleanupPending: z.boolean(),
+  permissions: z.array(z.string()),
+  createdAt: z.string(),
+  expiresAt: z.string(),
+  revokedAt: z.string().nullable(),
+});
+export const connectionsSchema = z.object({
+  items: z.array(connectionSchema),
+  total: z.number(),
+  mcpUrl: z.string(),
+  demo: z.boolean(),
+});
