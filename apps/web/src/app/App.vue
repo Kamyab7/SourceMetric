@@ -19,6 +19,7 @@ import { healthSchema } from '@sourcemetric/contracts';
 import { api } from '../shared/api';
 import { useProjects } from '../features/projects/queries';
 const menuOpen = ref(true);
+const appVersion = __APP_VERSION__;
 const route = useRoute();
 const projects = useProjects();
 const health = useQuery({
@@ -133,7 +134,7 @@ const breadcrumbLabel = computed(
             width="18"
             height="18"
             aria-hidden="true"
-          />SourceMetric</span
+          />SourceMetric <span class="text-slate-400">{{ appVersion }}</span></span
         >
       </footer>
     </div>
