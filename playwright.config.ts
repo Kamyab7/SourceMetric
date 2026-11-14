@@ -14,6 +14,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
+    env: { CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV: 'false' },
     command:
       'pnpm build:web && pnpm exec wrangler d1 migrations apply sourcemetric --local --env local --persist-to .wrangler/e2e-state && pnpm exec wrangler dev --env local --port 8789 --test-scheduled --persist-to .wrangler/e2e-state',
     url: 'http://localhost:8789/api/v1/health',

@@ -169,6 +169,56 @@ export async function setup(
       exclude: [],
     },
   );
+  // Narrower Access applications let OAuth/MCP clients reach protocol endpoints.
+  // The Worker validates OAuth; the parent application's email policy stays intact.
+  const publicPaths = [
+    '/mcp',
+    '/.well-known/oauth-authorization-server',
+    '/.well-known/oauth-protected-resource',
+    '/.well-known/oauth-protected-resource/mcp',
+    '/oauth/token',
+    '/oauth/register',
+  ];
+  for (const path of publicPaths) {
+    const domain = hostname + path;
+    const name = `SourceMetric MCP setup: ${options.name}${path}`;
+    const previous = apps.find((a) => a.domain === domain);
+    if (previous && previous.name !== name)
+      throw new Error(
+        'An unmanaged Access application protects an MCP endpoint. Refusing to overwrite it.',
+      );
+    const existingPolicies = previous
+      ? await list<Resource>(`/access/apps/${previous.id}/policies`)
+      : [];
+    if (
+      existingPolicies.length > 1 ||
+      existingPolicies.some((p) => p.name !== 'SourceMetric OAuth protocol bypass')
+    )
+      throw new Error('Unexpected MCP Access policies; refusing to modify this application.');
+    const bypassApp = await api<Resource>(
+      previous ? `/access/apps/${previous.id}` : '/access/apps',
+      previous ? 'PUT' : 'POST',
+      { name, domain, type: 'self_hosted', session_duration: '24h' },
+    );
+    const policy = existingPolicies[0];
+    await api(
+      `/access/apps/${bypassApp.id}/policies${policy ? `/${policy.id}` : ''}`,
+      policy ? 'PUT' : 'POST',
+      {
+        name: 'SourceMetric OAuth protocol bypass',
+        decision: 'bypass',
+        precedence: 1,
+        include: [{ everyone: {} }],
+        require: [],
+        exclude: [],
+      },
+    );
+  }
+  const namespaces = await list<{ id: string; title: string }>('/storage/kv/namespaces');
+  const oauthTitle = `${options.name}-oauth`;
+  const oauthNamespace =
+    namespaces.find((n) => n.title === oauthTitle) ??
+    (await api<{ id: string }>('/storage/kv/namespaces', 'POST', { title: oauthTitle }));
   const databases = await list<{ uuid: string; name: string }>('/d1/database');
   const database =
     databases.find((d) => d.name === options.name) ||
@@ -183,6 +233,7 @@ export async function setup(
     preview_urls: false,
     main: resolve(root, base.main),
     assets: { ...base.assets, directory: resolve(root, base.assets.directory) },
+    kv_namespaces: [{ binding: 'OAUTH_KV', id: oauthNamespace.id }],
     d1_databases: [
       {
         binding: 'DB',

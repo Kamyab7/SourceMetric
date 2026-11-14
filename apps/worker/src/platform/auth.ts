@@ -16,6 +16,7 @@ export const security: MiddlewareHandler<AppBindings> = async (c, next) => {
   const url = new URL(c.req.url);
   const local =
     c.env.APP_ENV === 'local' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  if (local) c.set('userId', 'local-developer');
   if (!local) {
     if (!c.env.ACCESS_TEAM_DOMAIN || !c.env.ACCESS_AUD || !c.env.APP_ORIGIN)
       throw new AppError(503, 'AUTH_NOT_CONFIGURED', 'Cloudflare Access is not configured.');
@@ -32,6 +33,7 @@ export const security: MiddlewareHandler<AppBindings> = async (c, next) => {
         requiredClaims: ['exp', 'sub'],
       });
       if (!payload.sub) throw new Error('Missing subject');
+      c.set('userId', encodeURIComponent(payload.sub));
     } catch {
       throw new AppError(401, 'UNAUTHENTICATED', 'Your Access session is invalid or expired.');
     }
@@ -50,7 +52,14 @@ export const security: MiddlewareHandler<AppBindings> = async (c, next) => {
       : [c.env.APP_ORIGIN];
     if (!origin || !allowed.includes(origin))
       throw new AppError(403, 'INVALID_ORIGIN', 'Mutation origin is not allowed.');
-    if (c.req.method !== 'DELETE' && !c.req.header('content-type')?.startsWith('application/json'))
+    if (
+      c.req.method !== 'DELETE' &&
+      !(
+        url.pathname === '/authorize' &&
+        c.req.header('content-type')?.startsWith('application/x-www-form-urlencoded')
+      ) &&
+      !c.req.header('content-type')?.startsWith('application/json')
+    )
       throw new AppError(400, 'INVALID_INPUT', 'Use application/json.');
   }
   await next();
@@ -58,7 +67,8 @@ export const security: MiddlewareHandler<AppBindings> = async (c, next) => {
   c.header('Referrer-Policy', 'same-origin');
   c.header(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" +
+      (c.get('consentRedirectOrigin') ? ' ' + c.get('consentRedirectOrigin') : ''),
   );
   c.header('Cache-Control', 'private, no-store');
 };

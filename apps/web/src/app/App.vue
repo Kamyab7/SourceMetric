@@ -8,6 +8,7 @@ import {
   Megaphone,
   LayoutDashboard,
   ShieldCheck,
+  Plug,
   FlaskConical,
   LogOut,
   ChevronRight,
@@ -35,6 +36,7 @@ const navigation = [
   { to: '/packages', label: 'Packages', icon: Boxes },
   { to: '/annotations', label: 'Releases & campaigns', icon: Megaphone },
   { to: '/sync', label: 'Collection health', icon: Activity },
+  { to: '/connections', label: 'AI connections', icon: Plug },
 ];
 const breadcrumbLabel = computed(
   () =>

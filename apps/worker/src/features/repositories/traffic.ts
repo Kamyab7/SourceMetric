@@ -26,71 +26,102 @@ export async function trafficStatuses(db: D1Database, ids: string[]) {
       .all<z.infer<typeof trafficStatusSchema>>()
   ).results;
 }
-export const repositoryTrafficRoutes = new Hono<AppBindings>()
-  .get('/', async (c) => {
-    const range = parse(repositoryRangeSchema, c.req.query()),
-      page = parse(paginationSchema, c.req.query());
-    // Pagination is by repository, keeping all three endpoint summaries in each group.
-    const { where, params } = repositoryScope(range.projectId, range.repositoryId);
-    const selected = (
-      await c.env.DB.prepare(
+export async function listTraffic(
+  db: D1Database,
+  range: z.infer<typeof repositoryRangeSchema>,
+  page: z.infer<typeof paginationSchema>,
+) {
+  // Pagination is by repository, keeping all three endpoint summaries in each group.
+  const { where, params } = repositoryScope(range.projectId, range.repositoryId);
+  const selected = (
+    await db
+      .prepare(
         `SELECT r.id,r.full_name fullName FROM repositories r${where} ORDER BY r.full_name,r.id LIMIT ? OFFSET ?`,
       )
-        .bind(...params, page.limit, page.offset)
-        .all<{ id: string; fullName: string }>()
-    ).results;
-    const total = await c.env.DB.prepare('SELECT COUNT(*) n FROM repositories r' + where)
-      .bind(...params)
-      .first<{ n: number }>();
-    const ids = selected.map((r) => r.id);
-    const [snapshots, statuses] = await Promise.all([
-      c.env.DB.prepare(
+      .bind(...params, page.limit, page.offset)
+      .all<{ id: string; fullName: string }>()
+  ).results;
+  const total = await db
+    .prepare('SELECT COUNT(*) n FROM repositories r' + where)
+    .bind(...params)
+    .first<{ n: number }>();
+  const ids = selected.map((r) => r.id);
+  const [snapshots, statuses] = await Promise.all([
+    db
+      .prepare(
         `SELECT ${columns} FROM json_each(?) selected CROSS JOIN json_each('["views","paths","referrers"]') metrics
         JOIN repository_traffic_snapshots s ON s.id=(SELECT b.id FROM repository_traffic_snapshots b WHERE b.repository_id=selected.value AND b.metric=metrics.value AND b.observed_at<=? ORDER BY b.observed_at DESC LIMIT 1) ORDER BY s.repository_id,s.metric`,
       )
-        .bind(JSON.stringify(ids), range.to)
-        .all<Summary>(),
-      trafficStatuses(c.env.DB, ids),
-    ]);
-    return c.json({
-      items: selected.map((r) => ({
-        repositoryId: r.id,
-        repositoryName: r.fullName,
-        snapshots: snapshots.results.filter((s) => s.repositoryId === r.id),
-        statuses: statuses.filter((s) => s.repositoryId === r.id),
-      })),
-      total: total?.n ?? 0,
-    });
-  })
-  .get('/history', async (c) => {
-    const id = parse(idSchema, c.req.query('repositoryId')),
-      metric = parse(trafficMetricSchema, c.req.query('metric'));
-    const range = parse(repositoryRangeSchema, c.req.query()),
-      p = parse(paginationSchema, c.req.query());
-    // History intentionally includes older snapshots up to the as-of date, including stale ones.
-    const [rows, total] = await Promise.all([
-      c.env.DB.prepare(
+      .bind(JSON.stringify(ids), range.to)
+      .all<Summary>(),
+    trafficStatuses(db, ids),
+  ]);
+  return {
+    items: selected.map((r) => ({
+      repositoryId: r.id,
+      repositoryName: r.fullName,
+      snapshots: snapshots.results.filter((s) => s.repositoryId === r.id),
+      statuses: statuses.filter((s) => s.repositoryId === r.id),
+    })),
+    total: total?.n ?? 0,
+  };
+}
+export async function trafficHistory(
+  db: D1Database,
+  id: string,
+  metric: z.infer<typeof trafficMetricSchema>,
+  range: z.infer<typeof repositoryRangeSchema>,
+  p: z.infer<typeof paginationSchema>,
+) {
+  // History intentionally includes older snapshots up to the as-of date, including stale ones.
+  const [rows, total] = await Promise.all([
+    db
+      .prepare(
         `SELECT ${columns} FROM repository_traffic_snapshots s WHERE s.repository_id=? AND s.metric=? AND s.observed_at<=? ORDER BY s.observed_at DESC,s.id DESC LIMIT ? OFFSET ?`,
       )
-        .bind(id, metric, range.to, p.limit, p.offset)
-        .all<Summary>(),
-      c.env.DB.prepare(
+      .bind(id, metric, range.to, p.limit, p.offset)
+      .all<Summary>(),
+    db
+      .prepare(
         'SELECT COUNT(*) n FROM repository_traffic_snapshots WHERE repository_id=? AND metric=? AND observed_at<=?',
       )
-        .bind(id, metric, range.to)
-        .first<{ n: number }>(),
-    ]);
-    return c.json({ items: rows.results, total: total?.n ?? 0 });
-  })
-  .get('/snapshots/:id', async (c) => {
-    const row = await c.env.DB.prepare(
-      `SELECT ${columns},s.items FROM repository_traffic_snapshots s WHERE s.id=?`,
-    )
-      .bind(parse(idSchema, c.req.param('id')))
-      .first<Summary & { items: string }>();
-    if (!row) throw notFound();
-    return c.json(trafficDetailSchema.parse({ ...row, items: JSON.parse(row.items) }));
-  });
+      .bind(id, metric, range.to)
+      .first<{ n: number }>(),
+  ]);
+  return { items: rows.results, total: total?.n ?? 0 };
+}
+export async function trafficSnapshot(db: D1Database, id: string) {
+  const row = await db
+    .prepare(`SELECT ${columns},s.items FROM repository_traffic_snapshots s WHERE s.id=?`)
+    .bind(id)
+    .first<Summary & { items: string }>();
+  if (!row) throw notFound();
+  return trafficDetailSchema.parse({ ...row, items: JSON.parse(row.items) });
+}
+export const repositoryTrafficRoutes = new Hono<AppBindings>()
+  .get('/', async (c) =>
+    c.json(
+      await listTraffic(
+        c.env.DB,
+        parse(repositoryRangeSchema, c.req.query()),
+        parse(paginationSchema, c.req.query()),
+      ),
+    ),
+  )
+  .get('/history', async (c) =>
+    c.json(
+      await trafficHistory(
+        c.env.DB,
+        parse(idSchema, c.req.query('repositoryId')),
+        parse(trafficMetricSchema, c.req.query('metric')),
+        parse(repositoryRangeSchema, c.req.query()),
+        parse(paginationSchema, c.req.query()),
+      ),
+    ),
+  )
+  .get('/snapshots/:id', async (c) =>
+    c.json(await trafficSnapshot(c.env.DB, parse(idSchema, c.req.param('id')))),
+  );
 export const repositoryTrafficExportRoutes = new Hono<AppBindings>().get('/', async (c) => {
   const range = parse(repositoryRangeSchema, c.req.query()),
     metric = c.req.query('metric');
