@@ -52,10 +52,10 @@ test('maintainer can authorize an MCP client and revoke it from AI connections',
   await page.goto('/connections');
   await expect(page.getByRole('heading', { name: 'AI connections' })).toBeVisible();
   await expect(page.getByLabel('MCP server URL')).toHaveValue(origin + '/mcp');
-  await expect(page.getByRole('heading', { name: clientName })).toBeVisible();
-  const card = page.getByRole('heading', { name: clientName }).locator('..').locator('..');
-  await card.getByRole('button', { name: 'Revoke', exact: true }).click();
-  await expect(card.getByRole('button', { name: 'Revoked', exact: true })).toBeVisible();
+  const row = page.getByRole('row').filter({ hasText: clientName });
+  await expect(row).toBeVisible();
+  await row.getByRole('button', { name: 'Revoke', exact: true }).click();
+  await expect(row.getByRole('button', { name: 'Revoked', exact: true })).toBeVisible();
   const revoked = await request.post('/mcp', {
     headers: {
       Authorization: 'Bearer ' + access_token,

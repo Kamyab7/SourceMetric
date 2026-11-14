@@ -52,11 +52,6 @@ async function revoke(id: string) {
     <p v-if="error" role="alert" class="text-error">{{ error }}</p>
     <template v-if="connections.data.value">
       <div class="card bg-base-200 p-6 space-y-3">
-        <h2 class="text-xl font-semibold">Connect an AI client</h2>
-        <p>
-          Add a remote MCP server in your AI client, paste this URL, and choose OAuth sign-in. Sign
-          in through Cloudflare Access and review the consent page.
-        </p>
         <label for="mcp-url" class="font-medium">MCP server URL</label>
         <div class="flex flex-wrap gap-2">
           <input
@@ -68,7 +63,7 @@ async function revoke(id: string) {
             {{ copied ? 'Copied' : 'Copy URL' }}
           </button>
         </div>
-        <p>
+        <p class="text-sm font-normal muted">
           Approved clients can read all projects, NuGet downloads, GitHub statistics, private
           repository names and traffic, and release/campaign context. They cannot edit data or
           trigger collection.
@@ -77,52 +72,94 @@ async function revoke(id: string) {
           OAuth approval is disabled in this demo.
         </p>
       </div>
-      <h2 class="text-xl font-semibold">Your approved connections</h2>
-      <p v-if="!connections.data.value.items.length" class="muted">
-        No connections yet. Start by adding the MCP server in your AI client.
-      </p>
-      <div
-        v-for="connection in connections.data.value.items"
-        :key="connection.id"
-        class="card bg-base-200 p-5 flex flex-row flex-wrap justify-between gap-4"
-      >
-        <div>
-          <h3 class="font-semibold">{{ connection.clientName }}</h3>
-          <p class="text-sm muted">
-            Approved {{ utc(connection.createdAt) }} · Expires {{ utc(connection.expiresAt) }}
-          </p>
-          <p class="text-sm">Permissions: {{ connection.permissions.join(', ') }}</p>
-          <p v-if="connection.revokedAt" class="text-sm">Revoked {{ utc(connection.revokedAt) }}</p>
-          <p v-else-if="Date.parse(connection.expiresAt) <= Date.now()" class="text-sm">Expired</p>
+      <section class="card bg-base-100 border border-base-300 panel">
+        <div class="section-heading">
+          <h2>Your approved connections</h2>
+          <span class="muted">{{ connections.data.value.total }} connections</span>
         </div>
-        <button
-          class="btn btn-outline btn-error"
-          :disabled="
-            Boolean(busy) ||
-            connections.data.value.demo ||
-            Boolean(connection.revokedAt && !connection.cleanupPending)
-          "
-          @click="revoke(connection.id)"
-        >
-          {{
-            busy === connection.id
-              ? 'Revoking…'
-              : connection.cleanupPending
-                ? 'Retry grant cleanup'
-                : connection.revokedAt
-                  ? 'Revoked'
-                  : 'Revoke'
-          }}
-        </button>
-      </div>
-      <Pagination
-        :total="connections.data.value.total"
-        :page="page"
-        :page-size="pageSize"
-        label="connections"
-        @update:page="page = $event"
-        @update:page-size="pageSize = $event"
-      />
+        <div class="table-scroll">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Permissions</th>
+                <th>Approved</th>
+                <th>Expires</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="connection in connections.data.value.items" :key="connection.id">
+                <td>
+                  <strong>{{ connection.clientName }}</strong>
+                </td>
+                <td>{{ connection.permissions.join(', ') }}</td>
+                <td class="small">{{ utc(connection.createdAt) }}</td>
+                <td class="small">{{ utc(connection.expiresAt) }}</td>
+                <td>
+                  <span
+                    class="badge badge-soft border-0"
+                    :class="
+                      connection.revokedAt
+                        ? 'badge-neutral'
+                        : Date.parse(connection.expiresAt) <= Date.now()
+                          ? 'badge-warning'
+                          : 'badge-success'
+                    "
+                  >
+                    {{
+                      connection.revokedAt
+                        ? 'Revoked'
+                        : Date.parse(connection.expiresAt) <= Date.now()
+                          ? 'Expired'
+                          : 'Active'
+                    }}
+                  </span>
+                  <p v-if="connection.revokedAt" class="small muted">
+                    {{ utc(connection.revokedAt) }}
+                  </p>
+                </td>
+                <td>
+                  <div class="actions">
+                    <button
+                      class="btn btn-sm btn-soft btn-error border-0 shadow-none text-error"
+                      :disabled="
+                        Boolean(busy) ||
+                        connections.data.value.demo ||
+                        Boolean(connection.revokedAt && !connection.cleanupPending)
+                      "
+                      @click="revoke(connection.id)"
+                    >
+                      {{
+                        busy === connection.id
+                          ? 'Revoking…'
+                          : connection.cleanupPending
+                            ? 'Retry grant cleanup'
+                            : connection.revokedAt
+                              ? 'Revoked'
+                              : 'Revoke'
+                      }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-if="!connections.data.value.items.length" class="empty">
+          No connections yet. Start by adding the MCP server in your AI client.
+        </p>
+        <Pagination
+          :total="connections.data.value.total"
+          :page="page"
+          :page-size="pageSize"
+          :busy="connections.isFetching.value"
+          label="connections"
+          @update:page="page = $event"
+          @update:page-size="pageSize = $event"
+        />
+      </section>
     </template>
   </section>
 </template>
