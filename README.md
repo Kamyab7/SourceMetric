@@ -4,6 +4,21 @@ SourceMetric collects marketing and growth data for open-source maintainers. Tra
 
 Host it on your own Cloudflare account with a single setup script. It is designed for Cloudflare’s free tier, within its [usage limits](https://developers.cloudflare.com/workers/platform/limits/) and [database allowance](https://developers.cloudflare.com/d1/platform/pricing/).
 
+## Features
+
+| Feature              | What it does                                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| NuGet tracking       | Track package downloads and version-level metrics over time.                                                 |
+| GitHub tracking      | Track repository stars, forks, clones, and views.                                                            |
+| Traffic insights     | Explore repository visitors, popular content, and referring sites.                                           |
+| Project organization | Group related packages and repositories into projects.                                                       |
+| Growth dashboard     | View historical metrics and trends in one dashboard.                                                         |
+| Releases & campaigns | Add dated notes to give changes in your metrics context.                                                     |
+| Automatic collection | Collect data on a schedule and monitor collection status.                                                    |
+| AI connections       | Give AI clients read-only access to tracked stats through OAuth-enabled MCP connections that you can revoke. |
+| Private self-hosting | Run on your own Cloudflare account with email sign-in through Cloudflare Access.                             |
+| Local demo           | Explore sample projects and metrics without an account or API tokens.                                        |
+
 ## Quick start
 
 You need Node.js 22.12+, pnpm 11, and a Cloudflare account with Zero Trust onboarding completed.
@@ -58,57 +73,27 @@ Run `pnpm deploy` again to deploy updates. For more setup help, see the [deploym
 
 ## Useful commands
 
-### Try the demo
+| Command                    | Purpose                                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------ |
+| `pnpm demo`                | Explore sample projects, metrics, and campaign notes at [localhost:8790](http://localhost:8790). |
+| `DEMO_PORT=8791 pnpm demo` | Run the demo on a different port.                                                                |
+| `pnpm db:local`            | Apply database migrations before running locally.                                                |
+| `pnpm dev`                 | Run the app locally at [localhost:8787](http://localhost:8787).                                  |
+| `pnpm dev:web`             | Run frontend hot reload at [localhost:5173](http://localhost:5173) in another terminal.          |
+| `pnpm deploy`              | Set up or update your Cloudflare deployment.                                                     |
+| `pnpm build`               | Build the frontend.                                                                              |
+| `pnpm typecheck`           | Check TypeScript types.                                                                          |
+| `pnpm test`                | Run unit and integration tests.                                                                  |
+| `pnpm check:deploy`        | Check deployment packaging without deploying.                                                    |
+| `pnpm test:e2e`            | Run browser tests.                                                                               |
+| `pnpm test:demo`           | Run demo browser tests.                                                                          |
+| `pnpm format:check`        | Check formatting.                                                                                |
+| `pnpm format`              | Format the project.                                                                              |
 
-```bash
-pnpm demo
-```
-
-Open [localhost:8790](http://localhost:8790) to explore sample projects, metrics, and campaign notes. No Cloudflare account or API tokens are needed. The demo is read-only and resets its sample data on each launch. Stop it with Ctrl+C.
-
-To use another port:
-
-```bash
-DEMO_PORT=8791 pnpm demo
-```
-
-### Run locally
-
-```bash
-pnpm db:local
-pnpm dev
-```
-
-Open [localhost:8787](http://localhost:8787). For frontend hot reload, run `pnpm dev:web` in another terminal and open [localhost:5173](http://localhost:5173).
-
-### Build and check
-
-| Command             | Purpose                                       |
-| ------------------- | --------------------------------------------- |
-| `pnpm deploy`       | Set up or update your Cloudflare deployment.  |
-| `pnpm build`        | Build the frontend.                           |
-| `pnpm typecheck`    | Check TypeScript types.                       |
-| `pnpm test`         | Run unit and integration tests.               |
-| `pnpm check:deploy` | Check deployment packaging without deploying. |
-| `pnpm test:e2e`     | Run browser tests.                            |
-| `pnpm test:demo`    | Run demo browser tests.                       |
-| `pnpm format:check` | Check formatting.                             |
-| `pnpm format`       | Format the project.                           |
+The demo needs no Cloudflare account or API tokens. It is read-only and resets its sample data on each launch. Stop it with Ctrl+C.
 
 Before running browser tests, install Chromium with `pnpm exec playwright install chromium`.
 
 ## License
 
 SourceMetric is licensed under the [MIT License](LICENSE).
-
-### AI connections (read-only MCP)
-
-Open **AI connections** to copy your `/mcp` URL and add it as an OAuth-enabled
-remote MCP server in your AI client. Sign in through Cloudflare Access and approve
-read-only access to all tracked stats, including private GitHub repository names
-and traffic. You can view and revoke your connections on the same page. The MCP
-server exposes nine read tools and cannot edit data or queue collection.
-
-Existing deployments need a dedicated OAuth KV namespace, the connection-registry
-migration, and path-specific Access bypass applications for protocol discovery,
-registration, tokens and `/mcp`. See the [OAuth MCP deployment guide](docs/deployment.md#read-only-oauth-mcp-connections).
