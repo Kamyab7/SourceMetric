@@ -202,3 +202,41 @@ check commands.
 References: [Workers OAuth Provider](https://github.com/cloudflare/workers-oauth-provider),
 [Access application paths](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/app-paths/),
 [KV namespace API](https://developers.cloudflare.com/api/resources/kv/subresources/namespaces/methods/create/).
+
+## Cloudflare usage panel
+
+In the sidebar, choose **Cloudflare usage** to check this deployment's Free tier
+usage. The page loads usage when visited; Refresh requests a new snapshot. Daily counters
+start at 00:00 UTC. Analytics may be delayed or sampled; storage displays the most
+recent daily maximum available in the last 31 days. Missing samples are unavailable,
+not zero. The view does not collect historical snapshots.
+
+Create a **separate** API token with **Account → Account Analytics → Read**, scoped
+to your deployment's account. Add `CLOUDFLARE_ANALYTICS_API_TOKEN` to your local
+`.env` or deployment environment and rerun `pnpm deploy`. Setup uploads it as a
+Worker secret and supplies the resource identifiers automatically. Existing
+installations without this optional secret keep working and show setup guidance.
+Do not use the broader deployment token for runtime analytics.
+
+For manual deployments, set these Worker variables using your actual resources:
+
+| Variable                     | Value                                   |
+| ---------------------------- | --------------------------------------- |
+| `CLOUDFLARE_ACCOUNT_ID`      | Deployment account ID                   |
+| `CLOUDFLARE_WORKER_NAME`     | Deployed Worker script name             |
+| `CLOUDFLARE_D1_DATABASE_ID`  | UUID of the database bound as `DB`      |
+| `CLOUDFLARE_KV_NAMESPACE_ID` | ID of the namespace bound as `OAUTH_KV` |
+
+Upload `CLOUDFLARE_ANALYTICS_API_TOKEN` as a Worker secret using your deployment's
+Wrangler configuration. Never put the token in committed configuration, frontend
+variables, or browser requests. The usage endpoint uses the existing Access login.
+
+Remaining amounts subtract only SourceMetric consumption from the Free allowance;
+other applications share account allowances, so these figures are not the account's
+actual remaining balance. D1 storage instead compares this database against its
+500 MB per-database limit. Paid plans and billing estimates are not supported.
+
+References: [Workers limits](https://developers.cloudflare.com/workers/platform/limits/),
+[D1 limits](https://developers.cloudflare.com/d1/platform/limits/),
+[KV allowances](https://developers.cloudflare.com/kv/platform/pricing/),
+[analytics token permissions](https://developers.cloudflare.com/analytics/graphql-api/getting-started/authentication/api-token-auth/).

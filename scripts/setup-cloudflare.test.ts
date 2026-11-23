@@ -25,6 +25,7 @@ test('requires explicit credentials and a nonempty email allowlist', () => {
 test('reuses resources, reconciles the allowlist, migrates before deploying', async () => {
   const calls: { path: string; method: string; body: any }[] = [];
   const commands: string[][] = [];
+  const inputs: (string | undefined)[] = [];
   const fakeFetch: typeof fetch = async (url, init) => {
     const path = new URL(String(url)).pathname.split(env.CLOUDFLARE_ACCOUNT_ID)[1]!;
     const method = init?.method || 'GET';
@@ -63,10 +64,11 @@ test('reuses resources, reconciles the allowlist, migrates before deploying', as
     return Response.json({ success: true, result });
   };
   await setup(
-    env,
+    { ...env, CLOUDFLARE_ANALYTICS_API_TOKEN: 'separate-analytics-secret' },
     fakeFetch,
-    (args) => {
+    (args, _cwd, input) => {
       commands.push(args);
+      inputs.push(input);
     },
     '.wrangler/setup-tests',
   );
@@ -90,6 +92,17 @@ test('reuses resources, reconciles the allowlist, migrates before deploying', as
   );
   assert.equal(commands[1]?.includes('migrations'), true);
   assert.equal(commands[2]?.includes('deploy'), true);
+  assert.ok(commands[3]?.includes('CLOUDFLARE_ANALYTICS_API_TOKEN'));
+  assert.equal(inputs[3], 'separate-analytics-secret\n');
+  const { readFile } = await import('node:fs/promises');
+  const config = JSON.parse(
+    await readFile(new URL('../.wrangler/setup-tests/wrangler.json', import.meta.url), 'utf8'),
+  );
+  assert.equal(config.vars.CLOUDFLARE_ACCOUNT_ID, env.CLOUDFLARE_ACCOUNT_ID);
+  assert.equal(config.vars.CLOUDFLARE_WORKER_NAME, 'sourcemetric');
+  assert.equal(config.vars.CLOUDFLARE_D1_DATABASE_ID, 'database');
+  assert.equal(config.vars.CLOUDFLARE_KV_NAMESPACE_ID, 'oauth-kv');
+  assert.equal(JSON.stringify(config).includes('separate-analytics-secret'), false);
 });
 test('permission failures stop before deployment without leaking response bodies', async () => {
   const commands: string[][] = [];

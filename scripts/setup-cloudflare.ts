@@ -249,6 +249,10 @@ export async function setup(
       ACCESS_TEAM_DOMAIN: organization.auth_domain,
       ACCESS_AUD: app.aud,
       APP_ORIGIN: `https://${hostname}`,
+      CLOUDFLARE_ACCOUNT_ID: options.accountId,
+      CLOUDFLARE_WORKER_NAME: options.name,
+      CLOUDFLARE_D1_DATABASE_ID: database.uuid,
+      CLOUDFLARE_KV_NAMESPACE_ID: oauthNamespace.id,
     },
   };
   const configPath = resolve(root, outputDirectory, 'wrangler.json');
@@ -257,6 +261,12 @@ export async function setup(
   const flags = ['--config', configPath, '--env='];
   run(['exec', 'wrangler', 'd1', 'migrations', 'apply', 'DB', '--remote', ...flags], root);
   run(['exec', 'wrangler', 'deploy', ...flags], root);
+  if (env.CLOUDFLARE_ANALYTICS_API_TOKEN)
+    run(
+      ['exec', 'wrangler', 'secret', 'put', 'CLOUDFLARE_ANALYTICS_API_TOKEN', ...flags],
+      root,
+      env.CLOUDFLARE_ANALYTICS_API_TOKEN + '\n',
+    );
   if (env.GITHUB_TOKEN)
     run(
       ['exec', 'wrangler', 'secret', 'put', 'GITHUB_TOKEN', ...flags],
