@@ -311,3 +311,29 @@ export const connectionsSchema = z.object({
   mcpUrl: z.string(),
   demo: z.boolean(),
 });
+
+export const cloudflareUsageMetricSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  unit: z.enum(['count', 'bytes']),
+  period: z.enum(['daily', 'storage']),
+  allowanceScope: z.enum(['account', 'database']),
+  allowance: z.number().positive(),
+  status: z.enum(['available', 'unavailable']),
+  used: z.number().nonnegative().nullable(),
+  remaining: z.number().nonnegative().nullable(),
+  percent: z.number().nonnegative().nullable(),
+  measuredAt: z.string().nullable(),
+  message: z.string().nullable(),
+});
+export const cloudflareUsageSchema = z.object({
+  configured: z.boolean(),
+  demo: z.boolean(),
+  fetchedAt: z.string(),
+  periodStart: z.string(),
+  periodEnd: z.string(),
+  resetsAt: z.string(),
+  metrics: z.array(cloudflareUsageMetricSchema),
+});
+export type CloudflareUsage = z.infer<typeof cloudflareUsageSchema>;
+export type CloudflareUsageMetric = z.infer<typeof cloudflareUsageMetricSchema>;

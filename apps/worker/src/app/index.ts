@@ -10,6 +10,7 @@ import { packageRoutes } from '../features/packages/routes';
 import { annotationRoutes } from '../features/annotations/routes';
 import { metricRoutes } from '../features/metrics/routes';
 import { syncRoutes } from '../features/sync/routes';
+import { cloudflareRoutes } from '../features/cloudflare/routes';
 import { exportRoutes } from '../features/exports/routes';
 import { collectDue } from '../features/sync/collector';
 import {
@@ -59,6 +60,7 @@ app.route('/api/v1/packages', packageRoutes);
 app.route('/api/v1/annotations', annotationRoutes);
 app.route('/api/v1/metrics', metricRoutes);
 app.route('/api/v1/sync', syncRoutes);
+app.route('/api/v1/cloudflare', cloudflareRoutes);
 app.route('/api/v1/exports', exportRoutes);
 app.get('/api/v1/health', (c) =>
   c.json({ ok: true, demo: c.env.APP_ENV === 'local' && c.env.DEMO_MODE === 'true' }),
