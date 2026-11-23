@@ -74,7 +74,9 @@ test('GitHub demo histories render at workspace, project and repository scope', 
   await page.getByLabel('Chart metric').selectOption('uniques');
   await expect(page.getByRole('img', { name: /GitHub uniques by repository/ })).toBeVisible();
   await page.getByRole('link', { name: 'nebula/platform', exact: true }).first().click();
-  await expect(page.getByRole('heading', { name: 'nebula/platform', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'nebula/platform', exact: true, level: 1 }),
+  ).toBeVisible();
   await page.getByLabel('Range', { exact: true }).selectOption('7');
   await expect(page.getByRole('link', { name: /Export.*CSV/ })).toHaveCount(0);
   await page.getByRole('link', { name: 'Repositories', exact: true }).click();
