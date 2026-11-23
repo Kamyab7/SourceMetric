@@ -29,6 +29,10 @@ const router = createRouter({
       path: '/connections',
       component: () => import('../features/connections/ConnectionsPage.vue'),
     },
+    {
+      path: '/cloudflare-usage',
+      component: () => import('../features/cloudflare/CloudflareUsagePage.vue'),
+    },
     { path: '/sync', component: () => import('../features/sync/SyncPage.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],

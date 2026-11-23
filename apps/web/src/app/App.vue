@@ -2,6 +2,7 @@
 import {
   Menu,
   Activity,
+  Cloud,
   Boxes,
   GitFork,
   FolderKanban,
@@ -35,6 +36,7 @@ const navigation = [
   { to: '/repositories', label: 'Repositories', icon: GitFork },
   { to: '/packages', label: 'Packages', icon: Boxes },
   { to: '/annotations', label: 'Releases & campaigns', icon: Megaphone },
+  { to: '/cloudflare-usage', label: 'Cloudflare usage', icon: Cloud },
   { to: '/sync', label: 'Collection health', icon: Activity },
   { to: '/connections', label: 'AI connections', icon: Plug },
 ];

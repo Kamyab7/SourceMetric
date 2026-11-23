@@ -145,3 +145,13 @@ test('overview visitor charts and project/repository traffic history work withou
   await expect(page.getByRole('columnheader', { name: 'Traffic endpoints' })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('Cloudflare usage shows synthetic metrics in demo mode', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Cloudflare usage', exact: true }).click();
+  const usagePage = page.getByRole('region', { name: 'Cloudflare usage', exact: true });
+  await expect(usagePage.getByText('Demo · synthetic usage')).toBeVisible();
+  await expect(usagePage.getByRole('progressbar')).toHaveCount(9);
+  await expect(usagePage.getByText(/remaining in this database/)).toBeVisible();
+  await page.screenshot({ path: 'test-results/cloudflare-usage.png', fullPage: true });
+});
